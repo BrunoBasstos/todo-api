@@ -1,2 +1,2 @@
-from schemas.tarefa import TarefaSchema
-from schemas.usuario import UsuarioSchema
+from schemas.tarefa import *
+from schemas.usuario import *

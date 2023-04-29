@@ -1,6 +1,6 @@
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
-from flask import redirect
+from flask import redirect, request
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
 
@@ -32,23 +32,31 @@ def get_usuarios():
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
-@app.get('/usuario/{id}', tags=[usuario_tag])
-def get_usuario(id: int):
-    """Retorna um usuario específico da base de dados
+@app.get('/usuario/<id>', tags=[usuario_tag])
+def get_usuario():
     """
+    Retorna um usuario específico da base de dados
+    """
+    id = request.view_args['id']
     session = Session()
-    usuario = session.query(Usuario).filter_by(id=id).first()
+    usuario = session.query(Usuario).filter(Usuario.id == id).first()
+
+    if usuario is None:
+        return {"message": "Usuario não encontrado"}, 404
+
     return usuario.to_dict(), 200
 
 
 @app.post('/usuario', tags=[usuario_tag])
-def add_usuario(form: UsuarioSchema):
-    """Adiciona um novo Usuario à base de dados
+def add_usuario(body: UsuarioSchema):
+    """
+    Adiciona um novo Usuario à base de dados
     """
     usuario = Usuario(
-        nome=form.nome,
-        email=form.email,
-        senha=form.senha)
+        nome=body.nome,
+        email=body.email,
+        senha=body.senha
+    )
 
     try:
         # criando conexão com a base
@@ -70,10 +78,26 @@ def add_usuario(form: UsuarioSchema):
         return {"message": error_msg}, 409
 
 
-@app.delete('/usuario/{id}', tags=[usuario_tag])
-def delete_usuario(id: int):
+@app.put('/usuario/<id>', tags=[usuario_tag])
+def update_usuario(id, body: UsuarioSchema):
+    """
+    Atualiza um usuario específico da base de dados
+    """
+    # id = request.view_args['id']
+    session = Session()
+    usuario = session.query(Usuario).filter(Usuario.id == id).first()
+    usuario.nome = body.nome if body.nome is not None else usuario.nome
+    usuario.email = body.email if body.email is not None else usuario.email
+    usuario.senha = body.senha if body.senha is not None else usuario.senha
+    session.commit()
+    return usuario.to_dict(), 200
+
+
+@app.delete('/usuario/<id>', tags=[usuario_tag])
+def delete_usuario():
     """Deleta um usuario específico da base de dados
     """
+    id = request.view_args['id']
     session = Session()
     usuario = session.query(Usuario).filter_by(id=id).first()
     session.delete(usuario)

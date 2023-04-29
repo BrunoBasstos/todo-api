@@ -25,3 +25,13 @@ class Usuario(Base):
         self.nome = nome
         self.email = email
         self.senha = senha
+
+    def __repr__(self):
+        return f"<Usuario {self.nome}>"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nome": self.nome,
+            "email": self.email
+        }
