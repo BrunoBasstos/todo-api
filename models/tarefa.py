@@ -18,7 +18,7 @@ class Tarefa(Base):
     prioridade = Column(String(20), nullable=False)
     usuario = Column(Integer, ForeignKey("usuario.id"), nullable=False)
 
-    def __init__(self, titulo: str, descricao: str, status: str, prioridade: str, usuario: int = None,
+    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: str, usuario: int = None,
                  data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
         """
         Cria uma Tarefa
@@ -37,7 +37,23 @@ class Tarefa(Base):
         self.descricao = descricao
         self.status = status
         self.prioridade = prioridade
+        self.usuario = usuario
         if data_insercao:
             self.data_insercao = data_insercao
         if data_conclusao:
             self.data_conclusao = data_conclusao
+
+    def __repr__(self):
+        return f"<Tarefa {self.titulo}>"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "titulo": self.titulo,
+            "descricao": self.descricao,
+            "data_insercao": self.data_insercao,
+            "data_conclusao": self.data_conclusao,
+            "status": self.status.value,
+            "prioridade": self.prioridade,
+            "usuario": self.usuario
+        }

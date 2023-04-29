@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enums.status import Status
-from models.tarefa import Tarefa
+
 
 class TarefaSchema(BaseModel):
     """
     Define como uma nova tarefa a ser inserida deve ser representada
     """
-    titulo: str = "Comprar pão"
-    descricao: str = "Comprar pão na padaria da esquina"
-    status: str = Status.A_FAZER
-    prioridade: str = "Alta"
-    usuario: int = 1
+    titulo: str = Field(example="Comprar pão", description="O título da tarefa")
+    descricao: str = Field(example="Ir na padaria da esquina", description="A descrição da tarefa")
+    status: Status = Field(example=Status.A_FAZER, description="O status da tarefa")
+    prioridade: str = Field(min_length=1, max_length=20, example="Alta", description="A prioridade da tarefa")
+    usuario: int = Field(example=1, description="O id do usuário que criou a tarefa")

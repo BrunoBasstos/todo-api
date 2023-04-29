@@ -2,6 +2,9 @@ from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import redirect
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import UnprocessableEntity
+
+from enums.status import Status
 from models import Session, Usuario, Tarefa
 from schemas import *
 
@@ -58,13 +61,13 @@ def add_usuario(form: UsuarioSchema):
 
     except IntegrityError as e:
         # como a duplicidade do nome é a provável razão do IntegrityError
-        error_msg = "Usuario de mesmo nome já salvo na base :/"
-        return {"mesage": error_msg}, 409
+        error_msg = "Usuario de mesmo nome já salvo na base."
+        return {"message": error_msg}, 409
 
     except Exception as e:
         # caso um erro fora do previsto
-        error_msg = "Não foi possível salvar novo item :/"
-        return {"mesage": error_msg}, 409
+        error_msg = "Não foi possível salvar novo item."
+        return {"message": error_msg}, 409
 
 
 @app.delete('/usuario/{id}', tags=[usuario_tag])
@@ -100,11 +103,23 @@ def get_tarefa(id: int):
 def add_tarefa(form: TarefaSchema):
     """Adiciona uma nova Tarefa à base de dados
     """
+
+    # validate form.status is a valid Status
+    if not Status.is_valid(form.status.value):
+        error_msg = "Status inválido."
+        raise UnprocessableEntity(error_msg)
+
+    session = Session()
+    usuario = session.query(Usuario).filter_by(id=form.usuario).first()
+    if usuario is None:
+        error_msg = "Usuario não encontrado."
+        raise UnprocessableEntity(error_msg)
+
     tarefa = Tarefa(
         titulo=form.titulo,
         descricao=form.descricao,
         prioridade=form.prioridade,
-        status=form.status,
+        status=Status(form.status),
         usuario=form.usuario)
 
     try:
@@ -116,15 +131,23 @@ def add_tarefa(form: TarefaSchema):
         session.commit()
         return tarefa.to_dict(), 200
 
+
     except IntegrityError as e:
+
         # como a duplicidade do nome é a provável razão do IntegrityError
-        error_msg = "Tarefa de mesmo nome já salvo na base :/"
-        return {"mesage": error_msg}, 409
+
+        error_msg = "Tarefa de mesmo nome já salvo na base."
+
+        raise UnprocessableEntity(error_msg)
+
 
     except Exception as e:
+
         # caso um erro fora do previsto
-        error_msg = "Não foi possível salvar novo item :/"
-        return {"mesage": error_msg}, 409
+
+        error_msg = "Não foi possível salvar novo item."
+
+        raise UnprocessableEntity(error_msg)
 
 
 @app.post('/tarefa/{id}/complete', tags=[tarefa_tag])
