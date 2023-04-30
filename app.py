@@ -15,6 +15,8 @@ CORS(app)
 
 usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e remover usuarios")
 tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
+status_tag = Tag(name="Status", description="Listar os status disponíveis")
+prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
 
 
 @app.get('/')
@@ -236,6 +238,22 @@ def delete_tarefa():
     session.delete(tarefa)
     session.commit()
     return tarefa.to_dict(), 200
+
+
+@app.get('/prioridade', tags=[prioridade_tag])
+def get_prioridades():
+    """
+    Retorna uma lista de todas as prioridades cadastradas na base de dados
+    """
+    return [prioridade.value for prioridade in Prioridade], 200
+
+
+@app.get('/status', tags=[status_tag])
+def get_status():
+    """
+    Retorna uma lista de todos os status cadastrados na base de dados
+    """
+    return [status.value for status in Status], 200
 
 
 if __name__ == '__main__':
