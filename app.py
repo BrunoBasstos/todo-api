@@ -79,11 +79,11 @@ def add_usuario(body: UsuarioSchema):
 
 
 @app.put('/usuario/<id>', tags=[usuario_tag])
-def update_usuario(id, body: UsuarioSchema):
+def update_usuario(body: UsuarioUpdateSchema):
     """
     Atualiza um usuario específico da base de dados
     """
-    # id = request.view_args['id']
+    id = request.view_args['id']
     session = Session()
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
     usuario.nome = body.nome if body.nome is not None else usuario.nome

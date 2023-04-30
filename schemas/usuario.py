@@ -41,9 +41,9 @@ class UsuarioUpdateSchema(UsuarioSchema):
     Define como um usuario a ser atualizado deve ser representado
     """
     id: Optional[int] = Field(None, example=1, description="ID do usuário")
-    nome: str = Field(..., example="Joe Doe", description="Nome do usuário")
-    email: EmailStr = Field(..., example="joedoe@email.com", description="Email do usuário")
-    senha: str = Field(..., example="123456", description="Senha do usuário")
+    nome: Optional[str] = Field(None, example="Joe Doe", description="Nome do usuário")
+    email: Optional[EmailStr] = Field(None, example="joedoe@email.com", description="Email do usuário")
+    senha: Optional[str] = Field(None, example="123456", description="Senha do usuário")
     tarefas: Optional[List[TarefaSchema]] = None
 
 
