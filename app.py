@@ -8,6 +8,11 @@ from enums import Prioridade
 from enums.status import Status
 from models import Session, Usuario, Tarefa
 from schemas import *
+import jwt
+import bcrypt
+from datetime import datetime, timedelta
+
+SECRET_KEY = 'ef860173e6b13b7eec9eaec0dad96d6a3ef3e711'  # sha1('chave_secreta')
 
 info = Info(title="ToDo API", version="1.0.0")
 app = OpenAPI(__name__, info=info)
@@ -55,10 +60,12 @@ def add_usuario(body: UsuarioSchema):
     """
     Adiciona um novo Usuario à base de dados
     """
+    senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
+    senha_str = senha_criptografada.decode('utf-8')
     usuario = Usuario(
         nome=body.nome,
         email=body.email,
-        senha=body.senha
+        senha=senha_str
     )
 
     try:
@@ -254,6 +261,24 @@ def get_status():
     Retorna uma lista de todos os status cadastrados na base de dados
     """
     return [status.value for status in Status], 200
+
+
+@app.post('/login')
+def login():
+    email = request.json.get('email')
+    senha = request.json.get('senha')
+    senha_bcrypt = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
+    senha_bcrypt_string = senha_bcrypt.decode('utf-8')
+    session = Session()
+    usuario = session.query(Usuario).filter_by(email=email, senha=senha_bcrypt_string).first()
+    if usuario is None:
+        return {"message": "Credenciais inválidas"}, 401
+    payload = {
+        'exp': datetime.utcnow() + timedelta(days=1),
+        'sub': email
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    return {"access_token": token}, 200
 
 
 if __name__ == '__main__':
