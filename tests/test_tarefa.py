@@ -4,6 +4,7 @@ import json
 
 from flask_openapi3 import UnprocessableEntity
 
+from enums import Prioridade
 from enums.status import Status
 from tests.base import BaseTestCase
 from models import Usuario, Tarefa
@@ -12,8 +13,8 @@ from models import Usuario, Tarefa
 class TestTarefa(BaseTestCase):
 
     def test_get_tarefas(self):
-        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade="alta")
-        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade="baixa")
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.BAIXA)
 
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
@@ -29,8 +30,8 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data[1]["titulo"], "Tarefa 2")
 
     def test_get_tarefa_by_id(self):
-        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade="alta")
-        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade="baixa")
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.BAIXA)
 
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
@@ -78,7 +79,7 @@ class TestTarefa(BaseTestCase):
 
 
     def test_update_tarefa(self):
-        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade="alta")
+        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
         self.session.add(tarefa)
         self.session.commit()
 
@@ -112,7 +113,7 @@ class TestTarefa(BaseTestCase):
 
 
     def test_delete_tarefa(self):
-        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade="alta")
+        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
         self.session.add(tarefa)
         self.session.commit()
 

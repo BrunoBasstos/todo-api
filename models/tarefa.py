@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey
 from datetime import datetime
 from typing import Union
-from enums.status import Status
+from enums import Status, Prioridade
 
 from models import Base, Usuario
 
@@ -15,10 +15,10 @@ class Tarefa(Base):
     data_insercao = Column(DateTime, default=datetime.now())
     data_conclusao = Column(DateTime, nullable=True)
     status = Column(Enum(Status), nullable=False)
-    prioridade = Column(String(20), nullable=False)
+    prioridade = Column(Enum(Prioridade), nullable=False)
     usuario = Column(Integer, ForeignKey("usuario.id"), nullable=False)
 
-    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: str, usuario: int,
+    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: Prioridade, usuario: int,
                  data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
         """
         Cria uma Tarefa
@@ -54,6 +54,6 @@ class Tarefa(Base):
             "data_insercao": self.data_insercao,
             "data_conclusao": self.data_conclusao,
             "status": self.status.value,
-            "prioridade": self.prioridade,
+            "prioridade": self.prioridade.value,
             "usuario": self.usuario
         }

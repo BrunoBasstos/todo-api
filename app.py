@@ -4,6 +4,7 @@ from flask import redirect, request
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
 
+from enums import Prioridade
 from enums.status import Status
 from models import Session, Usuario, Tarefa
 from schemas import *
@@ -137,11 +138,17 @@ def add_tarefa(body: TarefaSchema):
     Adiciona uma nova Tarefa à base de dados
     """
 
-    # validate form.status is a valid Status
+    # validate body.status is a valid Status
     if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
         raise UnprocessableEntity(error_msg)
 
+    # validate body.prioridade is a valid Prioridade
+    if not Prioridade.is_valid(body.prioridade.value):
+        error_msg = "Prioridade inválida."
+        raise UnprocessableEntity(error_msg)
+
+    # validate body.usuario is a valid Usuario
     session = Session()
     usuario = session.query(Usuario).filter_by(id=body.usuario).first()
     if usuario is None:
