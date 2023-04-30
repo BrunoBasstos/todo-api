@@ -95,7 +95,8 @@ def update_usuario(body: UsuarioUpdateSchema):
 
 @app.delete('/usuario/<id>', tags=[usuario_tag])
 def delete_usuario():
-    """Deleta um usuario específico da base de dados
+    """
+    Deleta um usuario específico da base de dados
     """
     id = request.view_args['id']
     session = Session()
@@ -107,44 +108,52 @@ def delete_usuario():
 
 @app.get('/tarefa', tags=[tarefa_tag])
 def get_tarefas():
-    """Retorna uma lista de todas as tarefas cadastradas na base de dados
+    """
+    Retorna uma lista de todas as tarefas cadastradas na base de dados
     """
     session = Session()
     tarefas = session.query(Tarefa).all()
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
-@app.get('/tarefa/{id}', tags=[tarefa_tag])
-def get_tarefa(id: int):
-    """Retorna uma tarefa específica da base de dados
+@app.get('/tarefa/<id>', tags=[tarefa_tag])
+def get_tarefa():
     """
+    Retorna uma tarefa específica da base de dados
+    """
+    id = request.view_args['id']
     session = Session()
-    tarefa = session.query(Tarefa).filter_by(id=id).first()
+    tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
+
+    if tarefa is None:
+        return {"message": "Tarefa não encontrada"}, 404
+
     return tarefa.to_dict(), 200
 
 
 @app.post('/tarefa', tags=[tarefa_tag])
-def add_tarefa(form: TarefaSchema):
-    """Adiciona uma nova Tarefa à base de dados
+def add_tarefa(body: TarefaSchema):
+    """
+    Adiciona uma nova Tarefa à base de dados
     """
 
     # validate form.status is a valid Status
-    if not Status.is_valid(form.status.value):
+    if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
         raise UnprocessableEntity(error_msg)
 
     session = Session()
-    usuario = session.query(Usuario).filter_by(id=form.usuario).first()
+    usuario = session.query(Usuario).filter_by(id=body.usuario).first()
     if usuario is None:
         error_msg = "Usuario não encontrado."
         raise UnprocessableEntity(error_msg)
 
     tarefa = Tarefa(
-        titulo=form.titulo,
-        descricao=form.descricao,
-        prioridade=form.prioridade,
-        status=Status(form.status),
-        usuario=form.usuario)
+        titulo=body.titulo,
+        descricao=body.descricao,
+        prioridade=body.prioridade,
+        status=Status(body.status),
+        usuario=body.usuario)
 
     try:
         # criando conexão com a base
@@ -176,7 +185,8 @@ def add_tarefa(form: TarefaSchema):
 
 @app.post('/tarefa/{id}/complete', tags=[tarefa_tag])
 def complete_tarefa(id: int):
-    """Marca uma tarefa específica como concluída na base de dados
+    """
+    Marca uma tarefa específica como concluída na base de dados
     """
     session = Session()
     tarefa = session.query(Tarefa).filter_by(id=id).first()
@@ -185,25 +195,35 @@ def complete_tarefa(id: int):
     return tarefa.to_dict(), 200
 
 
-@app.put('/tarefa/{id}', tags=[tarefa_tag])
-def update_tarefa(id: int, form: TarefaSchema):
-    """Atualiza uma tarefa específica da base de dados
+@app.put('/tarefa/<id>', tags=[tarefa_tag])
+def update_tarefa(body: TarefaSchema):
+    """
+    Atualiza uma tarefa específica da base de dados
     """
     session = Session()
+    usuario = session.query(Usuario).filter_by(id=body.usuario).first()
+    if usuario is None:
+        error_msg = "Usuario não encontrado."
+        raise UnprocessableEntity(error_msg)
+
+    id = request.view_args['id']
+    session = Session()
     tarefa = session.query(Tarefa).filter_by(id=id).first()
-    tarefa.titulo = form.titulo
-    tarefa.descricao = form.descricao
-    tarefa.status = form.status
-    tarefa.prioridade = form.prioridade
-    tarefa.usuario_id = form.usuario_id
+    tarefa.titulo = body.titulo
+    tarefa.descricao = body.descricao
+    tarefa.status = body.status
+    tarefa.prioridade = body.prioridade
+    tarefa.usuario = body.usuario
     session.commit()
     return tarefa.to_dict(), 200
 
 
-@app.delete('/tarefa/{id}', tags=[tarefa_tag])
-def delete_tarefa(id: int):
-    """Deleta uma tarefa específica da base de dados
+@app.delete('/tarefa/<id>', tags=[tarefa_tag])
+def delete_tarefa():
     """
+    Deleta uma tarefa específica da base de dados
+    """
+    id = request.view_args['id']
     session = Session()
     tarefa = session.query(Tarefa).filter_by(id=id).first()
     session.delete(tarefa)

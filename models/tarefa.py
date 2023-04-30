@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Union
 from enums.status import Status
 
-from models import Base
+from models import Base, Usuario
 
 
 class Tarefa(Base):
@@ -18,7 +18,7 @@ class Tarefa(Base):
     prioridade = Column(String(20), nullable=False)
     usuario = Column(Integer, ForeignKey("usuario.id"), nullable=False)
 
-    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: str, usuario: int = None,
+    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: str, usuario: int,
                  data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
         """
         Cria uma Tarefa

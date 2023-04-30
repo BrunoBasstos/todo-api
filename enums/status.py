@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Status(Enum):
-    A_FAZER = 'a fazer'
+    PENDENTE = 'pendente'
     EM_ANDAMENTO = 'em andamento'
     CONCLUIDA = 'concluída'
 

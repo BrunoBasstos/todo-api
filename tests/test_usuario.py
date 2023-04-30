@@ -1,4 +1,3 @@
-# tests/test_usuario_routes.py
 import json
 from tests.base import BaseTestCase
 from models import Usuario
