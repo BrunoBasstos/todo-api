@@ -23,7 +23,7 @@ class UsuarioSchema(BaseModel):
     nome: str = Field(example="Joe Doe", description="Nome do usuário")
     email: str = Field(example="joedoe@email.com", description="Email do usuário")
     senha: str = Field(example="12345", description="Senha do usuário")
-    perfil: Perfil = Field(example=Perfil.USUARIO, description="Perfil do usuário")
+    perfil: Optional[Perfil] = Field(example=Perfil.USUARIO, description="Perfil do usuário")
     tarefas: Optional[List[TarefaSchema]] = None
 
     @validator('nome')

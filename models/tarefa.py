@@ -20,7 +20,7 @@ class Tarefa(Base):
     prioridade = Column(Enum(Prioridade), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuario.id", ondelete='CASCADE'), nullable=False)
 
-    usuario = relationship("Usuario", back_populates="tarefas")
+    usuario = relationship("Usuario", back_populates="tarefas", lazy='joined')
 
     def __init__(self, titulo: str, descricao: str, status: Status, prioridade: Prioridade, usuario_id: int,
                  data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
@@ -60,5 +60,5 @@ class Tarefa(Base):
             "status": self.status.value,
             "prioridade": self.prioridade.value,
             "usuario_id": self.usuario_id,
-            "usuario": self.usuario.to_dict() if self.usuario else None
+            "usuario": self.usuario.to_dict() if self.usuario is not None else None
         }

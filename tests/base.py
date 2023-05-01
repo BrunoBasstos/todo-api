@@ -28,7 +28,7 @@ class BaseTestCase(TestCase):
 
     def create_auth_token(self, user_id):
         token_payload = {
-            'exp': datetime.utcnow() + timedelta(seconds=10),
+            'exp': datetime.utcnow() + timedelta(minutes=1),
             'sub': user_id,
             'usuario': 'Teste'
         }
