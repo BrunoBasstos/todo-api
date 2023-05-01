@@ -10,7 +10,6 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from utils.middleware import protect, SECRET_KEY
-from functools import wraps
 
 info = Info(title="ToDo API", version="1.0.0")
 app = OpenAPI(__name__, info=info)

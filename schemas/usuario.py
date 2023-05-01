@@ -35,7 +35,7 @@ class UsuarioSchema(BaseModel):
             raise ValueError('Senha deve ter no mínimo 5 caracteres')
         return v
 
-#     override EmailStr validator to translate its error message
+    #     override EmailStr validator to translate its error message
     @validator('email')
     def email_must_be_valid(cls, v):
         try:

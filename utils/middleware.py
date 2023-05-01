@@ -6,8 +6,6 @@ SECRET_KEY = 'ef860173e6b13b7eec9eaec0dad96d6a3ef3e711'  # sha1('chave_secreta')
 
 
 def protect(func):
-    print('protect')
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not has_request_context():

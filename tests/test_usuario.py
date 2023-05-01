@@ -85,9 +85,6 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
 
-
-
-
     def test_update_usuario(self):
         # Add sample data to the test database
         user = Usuario(nome='Usuário Teste', email='usuarioteste@mail.com', senha='teste1234')
@@ -117,4 +114,3 @@ class TestUsuario(BaseTestCase):
 
         user = self.session.query(Usuario).filter(Usuario.id == user.id).first()
         self.assertIsNone(user)
-
