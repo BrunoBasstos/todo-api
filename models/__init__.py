@@ -16,7 +16,8 @@ def create_default_admin_user(session):
     admin_exists = session.query(Usuario).filter(Usuario.email == admin_email).first()
 
     if not admin_exists:
-        admin = Usuario(nome="Administrador Padrão", email=admin_email, senha=admin_password, perfil=Perfil.ADMINISTRADOR)
+        admin = Usuario(nome="Administrador Padrão", email=admin_email, senha=admin_password,
+                        perfil=Perfil.ADMINISTRADOR)
         session.add(admin)
         session.commit()
 
