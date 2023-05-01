@@ -2,7 +2,7 @@ import jwt
 import pytest
 from flask_testing import TestCase
 from app import app
-from models import Base, engine, Session
+from models import Base, engine, Session, Usuario
 from utils.middleware import SECRET_KEY
 from datetime import datetime, timedelta
 
@@ -20,7 +20,10 @@ class BaseTestCase(TestCase):
     def setUp(self):
         Base.metadata.create_all(engine)
         self.session = Session()
-        self.auth_token = self.create_auth_token(1)
+        usuario = Usuario(nome="Usuário Base", email="email@base.com", senha="123456")
+        self.session.add(usuario)
+        self.session.commit()
+        self.auth_token = self.create_auth_token(usuario.id)
 
     def tearDown(self):
         Base.metadata.drop_all(engine)

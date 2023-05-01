@@ -1,6 +1,6 @@
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
-from flask import redirect, request
+from flask import g, redirect, request
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
@@ -34,6 +34,12 @@ def home():
 def get_usuarios():
     """Retorna uma lista de todos os usuarios cadastrados na base de dados
     """
+    teste = g.current_user.perfil
+    if g.current_user.perfil != Perfil.ADMINISTRADOR:
+        return [{
+            "msg": "Acesso restrito a administtradores.",
+            "type": "authorization"
+        }], 409
     session = Session()
     usuarios = session.query(Usuario).all()
     return [usuario.to_dict() for usuario in usuarios], 200

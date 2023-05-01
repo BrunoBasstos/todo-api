@@ -1,5 +1,6 @@
 import json
 
+from enums import Perfil
 from tests.base import BaseTestCase
 from models import Usuario
 
@@ -8,22 +9,21 @@ class TestUsuario(BaseTestCase):
 
     def test_get_usuarios(self):
         # Add some test data
-        user1 = Usuario(nome="Test User 1", email="test1@email.com", senha="test123")
+        user1 = Usuario(nome="Test User 1", email="test1@email.com", senha="test123", perfil=Perfil.ADMINISTRADOR)
         user2 = Usuario(nome="Test User 2", email="test2@email.com", senha="test123")
-
-        self.session.add(user1)
-        self.session.add(user2)
+        self.session.add_all([user1, user2])
         self.session.commit()
+
+        self.auth_token = self.create_auth_token(user1.id)
 
         # Make a request to the get_usuarios route
         response = self.client.get('/usuario', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(data), 2)
 
         # Check if the data in the response is correct
-        self.assertEqual(data[0]["nome"], "Test User 1")
-        self.assertEqual(data[1]["nome"], "Test User 2")
+        self.assertEqual(data[len(data)-2]["nome"], "Test User 1")
+        self.assertEqual(data[len(data)-1]["nome"], "Test User 2")
 
     def test_get_usuario_by_id(self):
         # Add sample data to the test database
