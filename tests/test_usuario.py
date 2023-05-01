@@ -9,12 +9,12 @@ class TestUsuario(BaseTestCase):
 
     def test_get_usuarios(self):
         # Add some test data
-        user1 = Usuario(nome="Test User 1", email="test1@email.com", senha="test123", perfil=Perfil.ADMINISTRADOR)
-        user2 = Usuario(nome="Test User 2", email="test2@email.com", senha="test123")
-        self.session.add_all([user1, user2])
+        usuario1 = self.createUser(Perfil.USUARIO)
+        usuario2 = self.createUser(Perfil.USUARIO)
+        self.session.add_all([usuario1, usuario2])
         self.session.commit()
 
-        self.auth_token = self.create_auth_token(user1.id)
+        self.auth_token = self.create_auth_token(usuario1.id)
 
         # Make a request to the get_usuarios route
         response = self.client.get('/usuario', headers=self.get_default_test_header())

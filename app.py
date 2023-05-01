@@ -34,10 +34,9 @@ def home():
 def get_usuarios():
     """Retorna uma lista de todos os usuarios cadastrados na base de dados
     """
-    teste = g.current_user.perfil
     if g.current_user.perfil != Perfil.ADMINISTRADOR:
         return [{
-            "msg": "Acesso restrito a administtradores.",
+            "msg": "Acesso restrito a administradores.",
             "type": "authorization"
         }], 409
     session = Session()
@@ -52,6 +51,12 @@ def get_usuario():
     Retorna um usuario específico da base de dados
     """
     id = request.view_args['id']
+    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
+        return [{
+            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
+            "type": "authorization"
+        }], 409
+
     session = Session()
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
 
@@ -66,6 +71,11 @@ def add_usuario(body: UsuarioSchema):
     """
     Adiciona um novo Usuario à base de dados
     """
+    if g.current_user.perfil != Perfil.ADMINISTRADOR:
+        return [{
+            "msg": "Acesso restrito a administradores.",
+            "type": "authorization"
+        }], 409
     senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
     senha_str = senha_criptografada.decode('utf-8')
     usuario = Usuario(
@@ -107,6 +117,12 @@ def update_usuario(body: UsuarioUpdateSchema):
     """
     Atualiza um usuario específico da base de dados
     """
+    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
+        return [{
+            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
+            "type": "authorization"
+        }], 409
+
     id = request.view_args['id']
     session = Session()
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
@@ -123,6 +139,11 @@ def delete_usuario():
     """
     Deleta um usuario específico da base de dados
     """
+    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
+        return [{
+            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
+            "type": "authorization"
+        }], 409
     id = request.view_args['id']
     session = Session()
     usuario = session.query(Usuario).filter_by(id=id).first()
@@ -137,11 +158,14 @@ def get_tarefas():
     """
     Retorna uma lista de todas as tarefas cadastradas na base de dados
     """
-    # get the token from the header
-    token = request.headers.get('Authorization')
-
     session = Session()
-    tarefas = session.query(Tarefa).all()
+
+    if g.current_user.perfil == Perfil.ADMINISTRADOR:
+        tarefas = session.query(Tarefa).order_by('usuario_id').all()
+    else:
+        usuario_id = g.current_user.id
+        tarefas = session.query(Tarefa).fiilter_by(id=usuario_id).all()
+
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
@@ -155,8 +179,17 @@ def get_tarefa():
     session = Session()
     tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
 
+    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != tarefa.user_id:
+        return [{
+            "msg": "Acesso a tarefas de terceiros é restrido a administradores.",
+            "type": "authorization"
+        }], 409
+
     if tarefa is None:
-        return {"message": "Tarefa não encontrada"}, 404
+        return [{
+            "msg": "Tarefa não encontrada.",
+            "type": "not_found"
+        }], 404
 
     return tarefa.to_dict(), 200
 
@@ -203,20 +236,14 @@ def add_tarefa(body: TarefaSchema):
 
 
     except IntegrityError as e:
-
         # como a duplicidade do nome é a provável razão do IntegrityError
-
         error_msg = "Tarefa de mesmo nome já salvo na base."
-
         raise UnprocessableEntity(error_msg)
 
 
     except Exception as e:
-
         # caso um erro fora do previsto
-
         error_msg = "Não foi possível salvar novo item."
-
         raise UnprocessableEntity(error_msg)
 
 

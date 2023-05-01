@@ -15,3 +15,7 @@ class Status(Enum):
     @classmethod
     def is_valid(cls, status: str):
         return status in cls._value2member_map_
+
+    @classmethod
+    def get(cls, status: str):
+        return cls._value2member_map_[status]

@@ -2,9 +2,11 @@ import jwt
 import pytest
 from flask_testing import TestCase
 from app import app
+from enums import Perfil
 from models import Base, engine, Session, Usuario
 from utils.middleware import SECRET_KEY
 from datetime import datetime, timedelta
+from faker import Faker
 
 
 class BaseTestCase(TestCase):
@@ -18,7 +20,7 @@ class BaseTestCase(TestCase):
         return app
 
     def setUp(self):
-        Base.metadata.create_all(engine)
+        self.fake = Faker()
         self.session = Session()
         usuario = Usuario(nome="Usuário Base", email="email@base.com", senha="123456")
         self.session.add(usuario)
@@ -40,3 +42,28 @@ class BaseTestCase(TestCase):
 
     def get_default_test_header(self):
         return {'Authorization': f'Bearer {self.auth_token}'}
+
+    def createUser(self, perfil):
+        if not Perfil.is_valid(perfil):
+            perfil = Perfil.USUARIO.value
+
+        usuario = Usuario(
+            nome=self.fake.name(),
+            email=self.fake.email(),
+            senha=self.fake.password(),
+            perfil=Perfil.get(perfil)
+        )
+        self.session.add(usuario)
+        self.session.commit()
+
+        return usuario
+
+    def getOrCreateUser(self, perfil):
+        if not Perfil.is_valid(perfil):
+            perfil = Perfil.USUARIO.value
+
+        usuario = self.session.query(Usuario).filter_by(perfil=Perfil.get(perfil)).first()
+        if not usuario:
+            usuario = self.createUser(perfil)
+
+        return usuario

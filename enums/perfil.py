@@ -16,3 +16,7 @@ class Perfil(Enum):
     @classmethod
     def is_valid(cls, perfil: str):
         return perfil in cls._value2member_map_
+
+    @classmethod
+    def get(cls, perfil: str):
+        return cls._value2member_map_[perfil]
