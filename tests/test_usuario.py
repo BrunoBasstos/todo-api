@@ -16,7 +16,7 @@ class TestUsuario(BaseTestCase):
         self.session.commit()
 
         # Make a request to the get_usuarios route
-        response = self.client.get('/usuario')
+        response = self.client.get('/usuario', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data), 2)
@@ -35,7 +35,7 @@ class TestUsuario(BaseTestCase):
         self.session.commit()
 
         # Perform the test
-        response = self.client.get(f'/usuario/{user1.id}')
+        response = self.client.get(f'/usuario/{user1.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -45,7 +45,7 @@ class TestUsuario(BaseTestCase):
 
         # Test non-existent user
         id_invalido = max(user1.id, user2.id) + 1
-        response = self.client.get(f'/usuario/{id_invalido}')
+        response = self.client.get(f'/usuario/{id_invalido}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
 
     def test_add_usuario(self):
@@ -55,7 +55,7 @@ class TestUsuario(BaseTestCase):
             'email': 'teste@email.com',
             'senha': 'teste123'
         }
-        response = self.client.post('/usuario', json=payload)
+        response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
         print(data)
         self.assertEqual(response.status_code, 200)
@@ -80,7 +80,7 @@ class TestUsuario(BaseTestCase):
             'senha': '123456'
         }
 
-        response = self.client.post('/usuario', json=payload)
+        response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 409)
         self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
@@ -99,7 +99,7 @@ class TestUsuario(BaseTestCase):
             'nome': 'Usuário Teste Alterado',
             'email': 'emailalterado@mail.com'
         }
-        response = self.client.put(f'/usuario/{user.id}', json=payload)
+        response = self.client.put(f'/usuario/{user.id}', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['nome'], 'Usuário Teste Alterado')
@@ -112,7 +112,7 @@ class TestUsuario(BaseTestCase):
         self.session.commit()
 
         # Perform the test
-        response = self.client.delete(f'/usuario/{user.id}')
+        response = self.client.delete(f'/usuario/{user.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
 
         user = self.session.query(Usuario).filter(Usuario.id == user.id).first()

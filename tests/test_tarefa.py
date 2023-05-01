@@ -14,7 +14,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get('/tarefa')
+        response = self.client.get('/tarefa', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data), 2)
@@ -33,7 +33,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get(f'/tarefa/{tarefa1.id}')
+        response = self.client.get(f'/tarefa/{tarefa1.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -42,7 +42,7 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['descricao'], tarefa1.descricao)
 
         id_invalido = max(tarefa1.id, tarefa2.id) + 1
-        response = self.client.get(f'/tarefa/{id_invalido}')
+        response = self.client.get(f'/tarefa/{id_invalido}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
 
     def test_add_tarefa(self):
@@ -53,7 +53,7 @@ class TestTarefa(BaseTestCase):
             'prioridade': 'alta',
             'usuario': 1
         }
-        response = self.client.post('/tarefa', json=payload)
+        response = self.client.post('/tarefa', json=payload, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 422)
         response_data = response.get_data(as_text=True)
         self.assertIn('Usuario não encontrado', response_data)
@@ -64,7 +64,7 @@ class TestTarefa(BaseTestCase):
         self.session.commit()
 
         # send request again
-        response = self.client.post('/tarefa', json=payload)
+        response = self.client.post('/tarefa', json=payload, headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -87,7 +87,7 @@ class TestTarefa(BaseTestCase):
             'prioridade': 'alta',
             'usuario': 1
         }
-        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload)
+        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 422)
         response_data = response.get_data(as_text=True)
         self.assertIn('Usuario não encontrado', response_data)
@@ -98,7 +98,7 @@ class TestTarefa(BaseTestCase):
         self.session.commit()
 
         # send request again
-        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload)
+        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -114,7 +114,7 @@ class TestTarefa(BaseTestCase):
         self.session.add(tarefa)
         self.session.commit()
 
-        response = self.client.delete(f'/tarefa/{tarefa.id}')
+        response = self.client.delete(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(f'/tarefa/{tarefa.id}')
+        response = self.client.get(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
