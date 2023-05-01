@@ -1,4 +1,5 @@
 import json
+
 from tests.base import BaseTestCase
 from models import Usuario
 
@@ -66,6 +67,27 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(user.nome, 'Usuário de Teste')
         self.assertEqual(user.email, data['email'])
 
+    def test_add_duplicated_usuario(self):
+        # Add sample data to the test database
+        user = Usuario(nome='Usuário Teste', email='teste@email.com', senha='123456')
+        self.session.add(user)
+        self.session.commit()
+
+        # Perform the test
+        payload = {
+            'nome': 'Usuário Teste 2',
+            'email': user.email,
+            'senha': '123456'
+        }
+
+        response = self.client.post('/usuario', json=payload)
+        data = response.json
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
+
+
+
+
     def test_update_usuario(self):
         # Add sample data to the test database
         user = Usuario(nome='Usuário Teste', email='usuarioteste@mail.com', senha='teste1234')
@@ -95,3 +117,4 @@ class TestUsuario(BaseTestCase):
 
         user = self.session.query(Usuario).filter(Usuario.id == user.id).first()
         self.assertIsNone(user)
+

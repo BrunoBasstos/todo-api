@@ -1,8 +1,6 @@
 from pydantic import BaseModel, Field
 
-from enums import Prioridade
-from enums.status import Status
-
+from enums import Prioridade, Status
 
 class TarefaSchema(BaseModel):
     """

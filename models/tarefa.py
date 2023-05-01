@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey
 from datetime import datetime
 from typing import Union
-from enums import Status, Prioridade
+from enums import Prioridade, Status
 
 from models import Base, Usuario
 

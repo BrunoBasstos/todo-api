@@ -1,18 +1,16 @@
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import redirect, request
+from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
-
-from enums import Prioridade
-from enums.status import Status
 from models import Session, Usuario, Tarefa
 from schemas import *
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
-
-SECRET_KEY = 'ef860173e6b13b7eec9eaec0dad96d6a3ef3e711'  # sha1('chave_secreta')
+from utils.middleware import protect, SECRET_KEY
+from functools import wraps
 
 info = Info(title="ToDo API", version="1.0.0")
 app = OpenAPI(__name__, info=info)
@@ -24,6 +22,7 @@ status_tag = Tag(name="Status", description="Listar os status disponíveis")
 prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
 
 
+@protect
 @app.get('/')
 def home():
     """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
@@ -31,6 +30,7 @@ def home():
     return redirect('/openapi/swagger')
 
 
+@protect
 @app.get('/usuario', tags=[usuario_tag])
 def get_usuarios():
     """Retorna uma lista de todos os usuarios cadastrados na base de dados
@@ -40,6 +40,7 @@ def get_usuarios():
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
+@protect
 @app.get('/usuario/<id>', tags=[usuario_tag])
 def get_usuario():
     """
@@ -78,16 +79,24 @@ def add_usuario(body: UsuarioSchema):
         return usuario.to_dict(), 200
 
     except IntegrityError as e:
-        # como a duplicidade do nome é a provável razão do IntegrityError
-        error_msg = "Usuario de mesmo nome já salvo na base."
-        return {"message": error_msg}, 409
+        session.rollback()
+        return [{
+            "msg": "Já existe um usuário com este email.",
+            "type": "integrity_error"
+        }], 409
+
+    except ValidationError as e:
+        session.rollback()
+        raise UnprocessableEntity(e.errors)
 
     except Exception as e:
-        # caso um erro fora do previsto
-        error_msg = "Não foi possível salvar novo item."
-        return {"message": error_msg}, 409
+        return {
+            "msg": "Não foi possível salvar novo item.",
+            "type": "unknown_error"
+        }, 409
 
 
+@protect
 @app.put('/usuario/<id>', tags=[usuario_tag])
 def update_usuario(body: UsuarioUpdateSchema):
     """
@@ -103,6 +112,7 @@ def update_usuario(body: UsuarioUpdateSchema):
     return usuario.to_dict(), 200
 
 
+@protect
 @app.delete('/usuario/<id>', tags=[usuario_tag])
 def delete_usuario():
     """
@@ -116,6 +126,7 @@ def delete_usuario():
     return usuario.to_dict(), 200
 
 
+@protect
 @app.get('/tarefa', tags=[tarefa_tag])
 def get_tarefas():
     """
@@ -126,6 +137,7 @@ def get_tarefas():
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
+@protect
 @app.get('/tarefa/<id>', tags=[tarefa_tag])
 def get_tarefa():
     """
@@ -141,6 +153,7 @@ def get_tarefa():
     return tarefa.to_dict(), 200
 
 
+@protect
 @app.post('/tarefa', tags=[tarefa_tag])
 def add_tarefa(body: TarefaSchema):
     """
@@ -199,6 +212,7 @@ def add_tarefa(body: TarefaSchema):
         raise UnprocessableEntity(error_msg)
 
 
+@protect
 @app.post('/tarefa/{id}/complete', tags=[tarefa_tag])
 def complete_tarefa(id: int):
     """
@@ -211,6 +225,7 @@ def complete_tarefa(id: int):
     return tarefa.to_dict(), 200
 
 
+@protect
 @app.put('/tarefa/<id>', tags=[tarefa_tag])
 def update_tarefa(body: TarefaSchema):
     """
@@ -234,6 +249,7 @@ def update_tarefa(body: TarefaSchema):
     return tarefa.to_dict(), 200
 
 
+@protect
 @app.delete('/tarefa/<id>', tags=[tarefa_tag])
 def delete_tarefa():
     """
@@ -247,6 +263,7 @@ def delete_tarefa():
     return tarefa.to_dict(), 200
 
 
+@protect
 @app.get('/prioridade', tags=[prioridade_tag])
 def get_prioridades():
     """
@@ -255,6 +272,7 @@ def get_prioridades():
     return [prioridade.value for prioridade in Prioridade], 200
 
 
+@protect
 @app.get('/status', tags=[status_tag])
 def get_status():
     """
@@ -267,18 +285,28 @@ def get_status():
 def login():
     email = request.json.get('email')
     senha = request.json.get('senha')
-    senha_bcrypt = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
-    senha_bcrypt_string = senha_bcrypt.decode('utf-8')
     session = Session()
-    usuario = session.query(Usuario).filter_by(email=email, senha=senha_bcrypt_string).first()
-    if usuario is None:
-        return {"message": "Credenciais inválidas"}, 401
+    usuario = session.query(Usuario).filter_by(email=email).first()
+
+    # senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
+    # senha_str = senha_criptografada.decode('utf-8')
+
+    print(senha.encode('utf-8'))
+    print(usuario.senha.encode('utf-8'))
+    teste = bcrypt.checkpw(senha.encode('utf-8'), usuario.senha.encode('utf-8'))
+    if usuario is None or not bcrypt.checkpw(senha, usuario.senha.encode('utf-8')):
+        return [{"msg": "Credenciais inválidas"}], 401
+
     payload = {
         'exp': datetime.utcnow() + timedelta(days=1),
         'sub': email
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    return {"access_token": token}, 200
+    # retornar o usuario e o token
+    return [{
+        **usuario.to_dict(),
+        "access_token": token
+    }], 200
 
 
 if __name__ == '__main__':

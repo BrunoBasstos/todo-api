@@ -1,20 +1,15 @@
-#testes automatizados para model e rotas de tarefas
-
 import json
-
-from flask_openapi3 import UnprocessableEntity
-
-from enums import Prioridade
-from enums.status import Status
+from enums import Prioridade, Status
 from tests.base import BaseTestCase
 from models import Usuario, Tarefa
 
 
 class TestTarefa(BaseTestCase):
-
     def test_get_tarefas(self):
-        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
-        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.BAIXA)
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1,
+                         prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1,
+                         prioridade=Prioridade.BAIXA)
 
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
@@ -30,8 +25,10 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data[1]["titulo"], "Tarefa 2")
 
     def test_get_tarefa_by_id(self):
-        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
-        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.BAIXA)
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1,
+                         prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE, usuario=1,
+                         prioridade=Prioridade.BAIXA)
 
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
@@ -61,12 +58,12 @@ class TestTarefa(BaseTestCase):
         response_data = response.get_data(as_text=True)
         self.assertIn('Usuario não encontrado', response_data)
 
-        #add user
+        # add user
         usuario = Usuario(nome="Teste", email="teste@mail.com", senha="123456")
         self.session.add(usuario)
         self.session.commit()
 
-        #send request again
+        # send request again
         response = self.client.post('/tarefa', json=payload)
         data = response.json
 
@@ -77,9 +74,9 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['prioridade'], payload['prioridade'])
         self.assertEqual(data['usuario'], payload['usuario'])
 
-
     def test_update_tarefa(self):
-        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
+        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1,
+                        prioridade=Prioridade.ALTA)
         self.session.add(tarefa)
         self.session.commit()
 
@@ -95,12 +92,12 @@ class TestTarefa(BaseTestCase):
         response_data = response.get_data(as_text=True)
         self.assertIn('Usuario não encontrado', response_data)
 
-        #add user
+        # add user
         usuario = Usuario(nome="Teste", email="teste@mail.com", senha="123456")
         self.session.add(usuario)
         self.session.commit()
 
-        #send request again
+        # send request again
         response = self.client.put(f'/tarefa/{tarefa.id}', json=payload)
         data = response.json
 
@@ -111,9 +108,9 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['prioridade'], payload['prioridade'])
         self.assertEqual(data['usuario'], payload['usuario'])
 
-
     def test_delete_tarefa(self):
-        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1, prioridade=Prioridade.ALTA)
+        tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE, usuario=1,
+                        prioridade=Prioridade.ALTA)
         self.session.add(tarefa)
         self.session.commit()
 
@@ -121,14 +118,3 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f'/tarefa/{tarefa.id}')
         self.assertEqual(response.status_code, 404)
-
-
-
-
-
-
-
-
-
-
-
