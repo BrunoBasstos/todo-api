@@ -174,7 +174,7 @@ def add_tarefa(body: TarefaSchema):
 
     # validate body.usuario is a valid Usuario
     session = Session()
-    usuario = session.query(Usuario).filter_by(id=body.usuario).first()
+    usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
     if usuario is None:
         error_msg = "Usuario não encontrado."
         raise UnprocessableEntity(error_msg)
@@ -184,7 +184,7 @@ def add_tarefa(body: TarefaSchema):
         descricao=body.descricao,
         prioridade=body.prioridade,
         status=Status(body.status),
-        usuario=body.usuario)
+        usuario_id=body.usuario_id)
 
     try:
         # criando conexão com a base
@@ -234,7 +234,7 @@ def update_tarefa(body: TarefaSchema):
     Atualiza uma tarefa específica da base de dados
     """
     session = Session()
-    usuario = session.query(Usuario).filter_by(id=body.usuario).first()
+    usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
     if usuario is None:
         error_msg = "Usuario não encontrado."
         raise UnprocessableEntity(error_msg)
@@ -246,7 +246,7 @@ def update_tarefa(body: TarefaSchema):
     tarefa.descricao = body.descricao
     tarefa.status = body.status
     tarefa.prioridade = body.prioridade
-    tarefa.usuario = body.usuario
+    tarefa.usuario_id = body.usuario_id
     session.commit()
     return tarefa.to_dict(), 200
 

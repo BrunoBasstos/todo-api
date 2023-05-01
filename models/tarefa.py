@@ -1,6 +1,9 @@
 from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey
 from datetime import datetime
 from typing import Union
+
+from sqlalchemy.orm import relationship
+
 from enums import Prioridade, Status
 from models import Base
 
@@ -15,9 +18,11 @@ class Tarefa(Base):
     data_conclusao = Column(DateTime, nullable=True)
     status = Column(Enum(Status), nullable=False)
     prioridade = Column(Enum(Prioridade), nullable=False)
-    usuario = Column(Integer, ForeignKey("usuario.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuario.id", ondelete='CASCADE'), nullable=False)
 
-    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: Prioridade, usuario: int,
+    usuario = relationship("Usuario", back_populates="tarefas")
+
+    def __init__(self, titulo: str, descricao: str, status: Status, prioridade: Prioridade, usuario_id: int,
                  data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
         """
         Cria uma Tarefa
@@ -27,7 +32,7 @@ class Tarefa(Base):
             descricao: a descrição de uma tarefa.
             status: o status de uma tarefa.
             prioridade: a prioridade de uma tarefa.
-            usuario: o id do usuário que criou a tarefa
+            usuario_id: o id do usuário que criou a tarefa
             data_insercao: data de quando a tarefa foi feita ou inserida
                            à base
             data_conclusao: data de quando a tarefa foi concluída
@@ -36,7 +41,7 @@ class Tarefa(Base):
         self.descricao = descricao
         self.status = status
         self.prioridade = prioridade
-        self.usuario = usuario
+        self.usuario_id = usuario_id
         if data_insercao:
             self.data_insercao = data_insercao
         if data_conclusao:
@@ -54,5 +59,6 @@ class Tarefa(Base):
             "data_conclusao": self.data_conclusao,
             "status": self.status.value,
             "prioridade": self.prioridade.value,
-            "usuario": self.usuario
+            "usuario_id": self.usuario_id,
+            "usuario": self.usuario.to_dict() if self.usuario else None
         }

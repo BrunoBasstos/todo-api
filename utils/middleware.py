@@ -11,10 +11,10 @@ def protect(func):
         if not has_request_context():
             return jsonify({'message': 'Request context is missing'}), 401
         token = request.headers.get('Authorization')
-        token = token.replace('Bearer ', '')
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
         try:
+            token = token.replace('Bearer ', '')
             decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
             g.current_user = decoded_token.get('sub')
         except Exception as e:

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, List
 
+from enums import Perfil
 from schemas import TarefaSchema
 
 
@@ -11,7 +12,8 @@ class UsuarioViewSchema(BaseModel):
     id: Optional[int] = Field(None, example=1, description="ID do usuário")
     nome: str = Field(..., example="Joe Doe", description="Nome do usuário")
     email: str = Field(..., example="joedoe@email.com", description="Email do usuário")
-    # tarefas: Optional[List[TarefaSchema]] = None
+    perfil: Perfil = Field(..., example=Perfil.USUARIO, description="Perfil do usuário")
+    tarefas: Optional[List[TarefaSchema]] = None
 
 
 class UsuarioSchema(BaseModel):
@@ -21,6 +23,7 @@ class UsuarioSchema(BaseModel):
     nome: str = Field(example="Joe Doe", description="Nome do usuário")
     email: str = Field(example="joedoe@email.com", description="Email do usuário")
     senha: str = Field(example="12345", description="Senha do usuário")
+    perfil: Perfil = Field(example=Perfil.USUARIO, description="Perfil do usuário")
     tarefas: Optional[List[TarefaSchema]] = None
 
     @validator('nome')
@@ -52,6 +55,7 @@ class UsuarioUpdateSchema(UsuarioSchema):
     nome: Optional[str] = Field(None, example="Joe Doe", description="Nome do usuário")
     email: Optional[str] = Field(None, example="joedoe@email.com", description="Email do usuário")
     senha: Optional[str] = Field(None, example="123456", description="Senha do usuário")
+    perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
     tarefas: Optional[List[TarefaSchema]] = None
 
 
@@ -69,3 +73,4 @@ class UsuarioSearchSchema(BaseModel):
     """
     nome: Optional[str] = Field(None, example="Joe Doe", description="Nome do usuário")
     email: Optional[str] = Field(None, example="joedoe@email.com", description="Email do usuário")
+    perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
