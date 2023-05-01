@@ -1,23 +1,35 @@
 import jwt
-from flask import request, abort, has_request_context
+from flask import request, g, has_request_context, jsonify
+from functools import wraps
 
 SECRET_KEY = 'ef860173e6b13b7eec9eaec0dad96d6a3ef3e711'  # sha1('chave_secreta')
 
+from functools import wraps
+
 
 def protect(func):
+    print('protect')
+
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if not has_request_context():
-            return abort(401)
+            return jsonify({'message': 'Request context is missing'}), 401
 
         token = request.headers.get('Authorization')
+        token = token.replace('Bearer ', '')
         if not token:
-            abort(401)
+            return jsonify({'message': 'Token is missing'}), 401
 
         try:
             decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            g.current_user = decoded_token.get('usuario')
-        except:
-            abort(401)
+            teste = decoded_token.get('sub')
+            print(teste)
+            print("aqui")
+            g.current_user = decoded_token.get('sub')
+        except Exception as e:
+            teste = e
+            print(e)
+            return jsonify({'message': 'Invalid token'}), 401
 
         return func(*args, **kwargs)
 

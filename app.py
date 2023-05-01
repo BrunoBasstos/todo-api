@@ -22,16 +22,16 @@ status_tag = Tag(name="Status", description="Listar os status disponíveis")
 prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
 
 
-@protect
 @app.get('/')
+@protect
 def home():
     """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
     """
     return redirect('/openapi/swagger')
 
 
-@protect
 @app.get('/usuario', tags=[usuario_tag])
+@protect
 def get_usuarios():
     """Retorna uma lista de todos os usuarios cadastrados na base de dados
     """
@@ -40,8 +40,8 @@ def get_usuarios():
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
-@protect
 @app.get('/usuario/<id>', tags=[usuario_tag])
+@protect
 def get_usuario():
     """
     Retorna um usuario específico da base de dados
@@ -96,8 +96,8 @@ def add_usuario(body: UsuarioSchema):
         }, 409
 
 
-@protect
 @app.put('/usuario/<id>', tags=[usuario_tag])
+@protect
 def update_usuario(body: UsuarioUpdateSchema):
     """
     Atualiza um usuario específico da base de dados
@@ -112,8 +112,8 @@ def update_usuario(body: UsuarioUpdateSchema):
     return usuario.to_dict(), 200
 
 
-@protect
 @app.delete('/usuario/<id>', tags=[usuario_tag])
+@protect
 def delete_usuario():
     """
     Deleta um usuario específico da base de dados
@@ -126,19 +126,22 @@ def delete_usuario():
     return usuario.to_dict(), 200
 
 
-@protect
 @app.get('/tarefa', tags=[tarefa_tag])
+@protect
 def get_tarefas():
     """
     Retorna uma lista de todas as tarefas cadastradas na base de dados
     """
+    # get the token from the header
+    token = request.headers.get('Authorization')
+
     session = Session()
     tarefas = session.query(Tarefa).all()
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
-@protect
 @app.get('/tarefa/<id>', tags=[tarefa_tag])
+@protect
 def get_tarefa():
     """
     Retorna uma tarefa específica da base de dados
@@ -153,8 +156,8 @@ def get_tarefa():
     return tarefa.to_dict(), 200
 
 
-@protect
 @app.post('/tarefa', tags=[tarefa_tag])
+@protect
 def add_tarefa(body: TarefaSchema):
     """
     Adiciona uma nova Tarefa à base de dados
@@ -212,8 +215,8 @@ def add_tarefa(body: TarefaSchema):
         raise UnprocessableEntity(error_msg)
 
 
-@protect
 @app.post('/tarefa/{id}/complete', tags=[tarefa_tag])
+@protect
 def complete_tarefa(id: int):
     """
     Marca uma tarefa específica como concluída na base de dados
@@ -225,8 +228,8 @@ def complete_tarefa(id: int):
     return tarefa.to_dict(), 200
 
 
-@protect
 @app.put('/tarefa/<id>', tags=[tarefa_tag])
+@protect
 def update_tarefa(body: TarefaSchema):
     """
     Atualiza uma tarefa específica da base de dados
@@ -249,8 +252,8 @@ def update_tarefa(body: TarefaSchema):
     return tarefa.to_dict(), 200
 
 
-@protect
 @app.delete('/tarefa/<id>', tags=[tarefa_tag])
+@protect
 def delete_tarefa():
     """
     Deleta uma tarefa específica da base de dados
@@ -263,8 +266,8 @@ def delete_tarefa():
     return tarefa.to_dict(), 200
 
 
-@protect
 @app.get('/prioridade', tags=[prioridade_tag])
+@protect
 def get_prioridades():
     """
     Retorna uma lista de todas as prioridades cadastradas na base de dados
@@ -272,8 +275,8 @@ def get_prioridades():
     return [prioridade.value for prioridade in Prioridade], 200
 
 
-@protect
 @app.get('/status', tags=[status_tag])
+@protect
 def get_status():
     """
     Retorna uma lista de todos os status cadastrados na base de dados
@@ -288,18 +291,13 @@ def login():
     session = Session()
     usuario = session.query(Usuario).filter_by(email=email).first()
 
-    # senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
-    # senha_str = senha_criptografada.decode('utf-8')
-
-    print(senha.encode('utf-8'))
-    print(usuario.senha.encode('utf-8'))
-    teste = bcrypt.checkpw(senha.encode('utf-8'), usuario.senha.encode('utf-8'))
-    if usuario is None or not bcrypt.checkpw(senha, usuario.senha.encode('utf-8')):
+    if usuario is None or not bcrypt.checkpw(senha.encode('utf-8'), usuario.senha.encode('utf-8')):
         return [{"msg": "Credenciais inválidas"}], 401
 
     payload = {
         'exp': datetime.utcnow() + timedelta(days=1),
-        'sub': email
+        'sub': usuario.id,
+        'usuario': usuario.nome
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     # retornar o usuario e o token
