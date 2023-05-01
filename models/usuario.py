@@ -1,3 +1,4 @@
+# /models/usuario.py
 from sqlalchemy import Column, String, Integer, Enum
 from sqlalchemy.orm import relationship
 
@@ -14,7 +15,7 @@ class Usuario(Base):
     senha = Column(String(100), nullable=False)
     perfil = Column(Enum(Perfil), nullable=False, default=Perfil.USUARIO)
 
-    tarefas = relationship("Tarefa")
+    tarefas = relationship("Tarefa", back_populates="usuario")
 
     def __init__(self, nome: str, email: str, senha: str, perfil: Perfil = Perfil.USUARIO):
         """

@@ -1,6 +1,5 @@
+# /models/tarefa.py
 from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey
-from datetime import datetime
-from typing import Union
 
 from sqlalchemy.orm import relationship
 
@@ -14,7 +13,7 @@ class Tarefa(Base):
     id = Column(Integer, primary_key=True)
     titulo = Column(String(100), nullable=False)
     descricao = Column(String(4000))
-    data_insercao = Column(DateTime, default=datetime.now())
+    data_insercao = Column(DateTime, default=DateTime.now())
     data_conclusao = Column(DateTime, nullable=True)
     status = Column(Enum(Status), nullable=False)
     prioridade = Column(Enum(Prioridade), nullable=False)

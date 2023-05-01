@@ -1,3 +1,4 @@
+# /schemas/usuario.py
 from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, List
 
@@ -56,7 +57,6 @@ class UsuarioUpdateSchema(UsuarioSchema):
     email: Optional[str] = Field(None, example="joedoe@email.com", description="Email do usuário")
     senha: Optional[str] = Field(None, example="123456", description="Senha do usuário")
     perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
-    tarefas: Optional[List[TarefaSchema]] = None
 
 
 class UsuarioDeleteSchema(BaseModel):

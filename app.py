@@ -1,3 +1,4 @@
+# /app.py
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import g, redirect, request
@@ -128,7 +129,11 @@ def update_usuario(body: UsuarioUpdateSchema):
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
     usuario.nome = body.nome if body.nome is not None else usuario.nome
     usuario.email = body.email if body.email is not None else usuario.email
-    usuario.senha = body.senha if body.senha is not None else usuario.senha
+    usuario.perfil = body.perfil if body.perfil is not None else usuario.perfil
+    if body.senha is not None:
+        senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
+        usuario.senha = senha_criptografada.decode('utf-8')
+
     session.commit()
     return usuario.to_dict(), 200
 
@@ -270,6 +275,14 @@ def update_tarefa(body: TarefaSchema):
     usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
     if usuario is None:
         error_msg = "Usuario não encontrado."
+        raise UnprocessableEntity(error_msg)
+
+    if not Status.is_valid(body.status.value):
+        error_msg = "Status inválido."
+        raise UnprocessableEntity(error_msg)
+
+    if not Prioridade.is_valid(body.prioridade.value):
+        error_msg = "Prioridade inválida."
         raise UnprocessableEntity(error_msg)
 
     id = request.view_args['id']
