@@ -182,14 +182,8 @@ def get_tarefas():
     else:
         usuario_id = g.current_user.id
         tarefas = session.query(Tarefa).filter_by(usuario_id=usuario_id).order_by(
-            func.field(
-                Tarefa.prioridade,
-                Prioridade.ALTA.value,
-                Prioridade.MEDIA.value,
-                Prioridade.BAIXA.value
-            )
+            Prioridade.case_order(Tarefa.prioridade)
         ).all()
-
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
