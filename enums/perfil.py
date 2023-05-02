@@ -6,8 +6,6 @@ class Perfil(Enum):
     ADMINISTRADOR = 'administrador'
     USUARIO = 'usuário'
 
-    # Outros perfis, se necessário
-
     def __str__(self):
         return self.value
 

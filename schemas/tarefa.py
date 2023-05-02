@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, validator
 from enums import Prioridade, Status
 from datetime import datetime
 
+
 class TarefaSchema(BaseModel):
     titulo: str = Field(example="Comprar pão", description="O título da tarefa")
     descricao: str = Field(example="Ir na padaria da esquina", description="A descrição da tarefa")
