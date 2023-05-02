@@ -3,6 +3,7 @@ from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import g, redirect, request
 from pydantic import ValidationError
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
 from models import Session, Usuario, Tarefa
@@ -169,10 +170,25 @@ def get_tarefas():
     session = Session()
 
     if g.current_user.perfil == Perfil.ADMINISTRADOR:
-        tarefas = session.query(Tarefa).order_by('usuario_id').all()
+        tarefas = session.query(Tarefa).order_by(
+            Tarefa.usuario_id,
+            func.field(
+                Tarefa.prioridade,
+                Prioridade.ALTA.value,
+                Prioridade.MEDIA.value,
+                Prioridade.BAIXA.value
+            )
+        ).all()
     else:
         usuario_id = g.current_user.id
-        tarefas = session.query(Tarefa).filter_by(usuario_id=usuario_id).all()
+        tarefas = session.query(Tarefa).filter_by(usuario_id=usuario_id).order_by(
+            func.field(
+                Tarefa.prioridade,
+                Prioridade.ALTA.value,
+                Prioridade.MEDIA.value,
+                Prioridade.BAIXA.value
+            )
+        ).all()
 
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
@@ -216,8 +232,7 @@ def add_tarefa(body: TarefaSchema):
         error_msg = "Prioridade inválida."
         raise UnprocessableEntity(error_msg)
 
-    session = Session()
-    usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
+    usuario = g.current_user
     if usuario is None:
         error_msg = "Usuario não encontrado."
         raise UnprocessableEntity(error_msg)
@@ -227,7 +242,8 @@ def add_tarefa(body: TarefaSchema):
         descricao=body.descricao,
         prioridade=body.prioridade,
         status=Status(body.status),
-        usuario_id=body.usuario_id)
+        usuario_id=usuario.id
+    )
 
     try:
         # criando conexão com a base

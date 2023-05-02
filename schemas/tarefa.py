@@ -1,4 +1,5 @@
 # /schemas/tarefa.py
+from typing import Optional
 from pydantic import BaseModel, Field, validator
 from enums import Prioridade, Status
 from datetime import datetime
@@ -9,7 +10,7 @@ class TarefaSchema(BaseModel):
     descricao: str = Field(example="Ir na padaria da esquina", description="A descrição da tarefa")
     status: Status = Field(example=Status.PENDENTE, description="O status da tarefa")
     prioridade: Prioridade = Field(example=Prioridade.ALTA, description="A prioridade da tarefa")
-    usuario_id: int = Field(example=1, description="O id do usuário que criou a tarefa")
+    usuario_id: Optional[int] = Field(example=1, description="O id do usuário que criou a tarefa")
     data_insercao: datetime = Field(default=datetime.now(), description="A data de inserção da tarefa")
     data_conclusao: datetime = Field(default=None, description="A data de conclusão da tarefa", nullable=True)
 
