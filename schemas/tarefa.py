@@ -11,8 +11,8 @@ class TarefaSchema(BaseModel):
     status: Status = Field(example=Status.PENDENTE, description="O status da tarefa")
     prioridade: Prioridade = Field(example=Prioridade.ALTA, description="A prioridade da tarefa")
     usuario_id: Optional[int] = Field(example=1, description="O id do usuário que criou a tarefa")
-    data_insercao: datetime = Field(default=datetime.now(), description="A data de inserção da tarefa")
-    data_conclusao: datetime = Field(default=None, description="A data de conclusão da tarefa", nullable=True)
+    data_insercao: Optional[datetime] = Field(default=datetime.now(), description="A data de inserção da tarefa")
+    data_conclusao: Optional[datetime] = Field(default=None, description="A data de conclusão da tarefa", nullable=True)
 
     @validator('titulo')
     def titulo_must_be_str(cls, v):

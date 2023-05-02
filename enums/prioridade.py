@@ -23,14 +23,11 @@ class Prioridade(Enum):
         return cls._value2member_map_[prioridade]
 
     @classmethod
-    def case_order(cls, column):
-        prioridade_order = {
-            cls.ALTA: 1,
-            cls.MEDIA: 2,
-            cls.BAIXA: 3
-        }
+    def case_order(cls, prioridade: str):
+        prioridade_conditions = [
+            (prioridade == "alta", 1),
+            (prioridade == "média", 2),
+            (prioridade == "baixa", 3),
+        ]
 
-        return case(
-            value=column,
-            whens=prioridade_order
-        )
+        return case(*prioridade_conditions, else_=4)

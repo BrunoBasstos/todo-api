@@ -172,12 +172,7 @@ def get_tarefas():
     if g.current_user.perfil == Perfil.ADMINISTRADOR:
         tarefas = session.query(Tarefa).order_by(
             Tarefa.usuario_id,
-            func.field(
-                Tarefa.prioridade,
-                Prioridade.ALTA.value,
-                Prioridade.MEDIA.value,
-                Prioridade.BAIXA.value
-            )
+            Prioridade.case_order(Tarefa.prioridade)
         ).all()
     else:
         usuario_id = g.current_user.id
@@ -218,6 +213,8 @@ def add_tarefa(body: TarefaSchema):
     """
     Adiciona uma nova Tarefa à base de dados
     """
+    session = Session()
+
     if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
         raise UnprocessableEntity(error_msg)
@@ -240,11 +237,7 @@ def add_tarefa(body: TarefaSchema):
     )
 
     try:
-        # criando conexão com a base
-        session = Session()
-        # adicionando tarefa
         session.add(tarefa)
-        # efetivando o camando de adição de novo item na tabela
         session.commit()
         return tarefa.to_dict(), 200
 

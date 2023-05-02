@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from typing import Union
 from enums import Prioridade, Status
 from models import Base
+from datetime import datetime
 
 
 class Tarefa(Base):
@@ -12,7 +13,7 @@ class Tarefa(Base):
     id = Column(Integer, primary_key=True)
     titulo = Column(String(100), nullable=False)
     descricao = Column(String(4000))
-    data_insercao = Column(DateTime, default=func.now(), nullable=False)
+    data_insercao = Column(DateTime, default=datetime.now(), nullable=False)
     data_conclusao = Column(DateTime, nullable=True)
     status = Column(Enum(Status), nullable=False)
     prioridade = Column(Enum(Prioridade), nullable=False)
@@ -21,7 +22,7 @@ class Tarefa(Base):
     usuario = relationship("Usuario", back_populates="tarefas", lazy='joined')
 
     def __init__(self, titulo: str, descricao: str, status: Status, prioridade: Prioridade, usuario_id: int,
-                 data_insercao: Union[DateTime, None] = None, data_conclusao: Union[DateTime, None] = None):
+                 data_insercao: Union[datetime, None] = None, data_conclusao: Union[datetime, None] = None):
         """
         Cria uma Tarefa
 
@@ -53,8 +54,8 @@ class Tarefa(Base):
             "id": self.id,
             "titulo": self.titulo,
             "descricao": self.descricao,
-            "data_insercao": self.data_insercao,
-            "data_conclusao": self.data_conclusao,
+            "data_insercao": self.data_insercao.isoformat(),
+            "data_conclusao": self.data_conclusao.isoformat(),
             "status": self.status.value,
             "prioridade": self.prioridade.value,
             "usuario_id": self.usuario_id,

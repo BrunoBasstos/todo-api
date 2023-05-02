@@ -105,7 +105,7 @@ class TestTarefa(BaseTestCase):
         response = self.client.post('/tarefa', json=payload, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 422)
         response_data = response.get_data(as_text=True)
-        self.assertIn('Usuario não encontrado', response_data)
+        self.assertIn('Usuário inválido', response_data)
 
         payload = {
             'titulo': 'Tarefa de Teste',
