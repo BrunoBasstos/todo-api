@@ -10,7 +10,7 @@ from models.tarefa import Tarefa
 
 
 def create_default_admin_user(session):
-    admin_email = "adminemail.com"
+    admin_email = "admin@email.com"
     admin_password = "admin1234"
 
     admin_exists = session.query(Usuario).filter(Usuario.email == admin_email).first()

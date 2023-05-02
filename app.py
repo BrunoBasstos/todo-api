@@ -39,24 +39,24 @@ def get_usuarios():
         return [{
             "msg": "Acesso restrito a administradores.",
             "type": "authorization"
-        }], 409
+        }], 401
     session = Session()
     usuarios = session.query(Usuario).all()
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
-@app.get('/usuario/<id>', tags=[usuario_tag])
+@app.get('/usuario/<int:id>', tags=[usuario_tag])
 @protect
 def get_usuario():
     """
     Retorna um usuario específico da base de dados
     """
     id = request.view_args['id']
-    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
+    if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
         return [{
-            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
+            "msg": "Acesso ao perfil de terceiros é restrito a administradores.",
             "type": "authorization"
-        }], 409
+        }], 401
 
     session = Session()
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
@@ -72,11 +72,6 @@ def add_usuario(body: UsuarioSchema):
     """
     Adiciona um novo Usuario à base de dados
     """
-    if g.current_user.perfil != Perfil.ADMINISTRADOR:
-        return [{
-            "msg": "Acesso restrito a administradores.",
-            "type": "authorization"
-        }], 409
     senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
     senha_str = senha_criptografada.decode('utf-8')
     usuario = Usuario(
@@ -112,20 +107,21 @@ def add_usuario(body: UsuarioSchema):
         }, 409
 
 
-@app.put('/usuario/<id>', tags=[usuario_tag])
+@app.put('/usuario/<int:id>', tags=[usuario_tag])
 @protect
 def update_usuario(body: UsuarioUpdateSchema):
     """
     Atualiza um usuario específico da base de dados
     """
-    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
-        return [{
-            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
-            "type": "authorization"
-        }], 409
-
     id = request.view_args['id']
     session = Session()
+
+    if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
+        return [{
+            "msg": "Alteração de perfil de terceiros é restrito a administradores.",
+            "type": "authorization"
+        }], 401
+
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
     usuario.nome = body.nome if body.nome is not None else usuario.nome
     usuario.email = body.email if body.email is not None else usuario.email
@@ -138,19 +134,26 @@ def update_usuario(body: UsuarioUpdateSchema):
     return usuario.to_dict(), 200
 
 
-@app.delete('/usuario/<id>', tags=[usuario_tag])
+@app.delete('/usuario/<int:id>', tags=[usuario_tag])
 @protect
 def delete_usuario():
     """
     Deleta um usuario específico da base de dados
     """
-    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != id:
-        return [{
-            "msg": "Acesso ao perfil de terceiros é restrido a administradores.",
-            "type": "authorization"
-        }], 409
     id = request.view_args['id']
     session = Session()
+
+    t1 = g.current_user.id
+    t2 = id
+    t3 = g.current_user.id != id
+    t4 = g.current_user.perfil != Perfil.ADMINISTRADOR
+
+    if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
+        return [{
+            "msg": "Exclusão de perfil de terceiros é restrito a administradores.",
+            "type": "authorization"
+        }], 401
+
     usuario = session.query(Usuario).filter_by(id=id).first()
     session.delete(usuario)
     session.commit()
@@ -169,12 +172,12 @@ def get_tarefas():
         tarefas = session.query(Tarefa).order_by('usuario_id').all()
     else:
         usuario_id = g.current_user.id
-        tarefas = session.query(Tarefa).fiilter_by(id=usuario_id).all()
+        tarefas = session.query(Tarefa).filter_by(usuario_id=usuario_id).all()
 
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
-@app.get('/tarefa/<id>', tags=[tarefa_tag])
+@app.get('/tarefa/<int:id>', tags=[tarefa_tag])
 @protect
 def get_tarefa():
     """
@@ -184,17 +187,17 @@ def get_tarefa():
     session = Session()
     tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
 
-    if g.current_user.perfil != Perfil.ADMINISTRADOR or g.current_user.id != tarefa.user_id:
-        return [{
-            "msg": "Acesso a tarefas de terceiros é restrido a administradores.",
-            "type": "authorization"
-        }], 409
-
     if tarefa is None:
         return [{
             "msg": "Tarefa não encontrada.",
             "type": "not_found"
         }], 404
+
+    if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != tarefa.usuario_id:
+        return [{
+            "msg": "Acesso a tarefas de terceiros é restrito a administradores.",
+            "type": "authorization"
+        }], 401
 
     return tarefa.to_dict(), 200
 
@@ -205,18 +208,14 @@ def add_tarefa(body: TarefaSchema):
     """
     Adiciona uma nova Tarefa à base de dados
     """
-
-    # validate body.status is a valid Status
     if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
         raise UnprocessableEntity(error_msg)
 
-    # validate body.prioridade is a valid Prioridade
     if not Prioridade.is_valid(body.prioridade.value):
         error_msg = "Prioridade inválida."
         raise UnprocessableEntity(error_msg)
 
-    # validate body.usuario is a valid Usuario
     session = Session()
     usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
     if usuario is None:
@@ -265,17 +264,14 @@ def complete_tarefa(id: int):
     return tarefa.to_dict(), 200
 
 
-@app.put('/tarefa/<id>', tags=[tarefa_tag])
+@app.put('/tarefa/<int:id>', tags=[tarefa_tag])
 @protect
 def update_tarefa(body: TarefaSchema):
     """
     Atualiza uma tarefa específica da base de dados
     """
     session = Session()
-    usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
-    if usuario is None:
-        error_msg = "Usuario não encontrado."
-        raise UnprocessableEntity(error_msg)
+    id = request.view_args['id']
 
     if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
@@ -285,19 +281,34 @@ def update_tarefa(body: TarefaSchema):
         error_msg = "Prioridade inválida."
         raise UnprocessableEntity(error_msg)
 
-    id = request.view_args['id']
-    session = Session()
-    tarefa = session.query(Tarefa).filter_by(id=id).first()
+    tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
+    if tarefa is None:
+        error_msg = "Tarefa não encontrada."
+        raise UnprocessableEntity(error_msg)
+
+    usuario = session.query(Usuario).filter_by(id=body.usuario_id).first()
+    if usuario is None:
+        error_msg = "Usuario não encontrado."
+        raise UnprocessableEntity(error_msg)
+
+    if g.current_user.perfil != Perfil.ADMINISTRADOR and (
+            g.current_user.id != tarefa.usuario_id or g.current_user.id != body.usuario_id):
+        return [{
+            "msg": "Alteração de tarefas de terceiros é restrito a administradores.",
+            "type": "authorization"
+        }], 401
+
     tarefa.titulo = body.titulo
     tarefa.descricao = body.descricao
     tarefa.status = body.status
     tarefa.prioridade = body.prioridade
     tarefa.usuario_id = body.usuario_id
     session.commit()
+
     return tarefa.to_dict(), 200
 
 
-@app.delete('/tarefa/<id>', tags=[tarefa_tag])
+@app.delete('/tarefa/<int:id>', tags=[tarefa_tag])
 @protect
 def delete_tarefa():
     """

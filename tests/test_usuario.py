@@ -8,77 +8,92 @@ from models import Usuario
 
 class TestUsuario(BaseTestCase):
 
-    def test_get_usuarios(self):
-        # Add some test data
-        usuario1 = self.createUser(Perfil.USUARIO)
-        usuario2 = self.createUser(Perfil.USUARIO)
-        self.session.add_all([usuario1, usuario2])
-        self.session.commit()
+    def test_admin_can_get_usuarios(self):
+        admin = self.createUser(Perfil.ADMINISTRADOR.value)
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(admin.id)
 
-        self.auth_token = self.create_auth_token(usuario1.id)
-
-        # Make a request to the get_usuarios route
         response = self.client.get('/usuario', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
 
-        # Check if the data in the response is correct
-        self.assertEqual(data[len(data)-2]["nome"], "Test User 1")
-        self.assertEqual(data[len(data)-1]["nome"], "Test User 2")
+        self.assertEqual(data[len(data) - 2]["nome"], admin.nome)
+        self.assertEqual(data[len(data) - 1]["nome"], usuario.nome)
+
+    def test_user_cannot_get_usuarios(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        response = self.client.get('/usuario', headers=self.get_default_test_header())
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
 
     def test_get_usuario_by_id(self):
-        # Add sample data to the test database
-        user1 = Usuario(nome='User1', email='user1@example.com', senha='password1')
-        user2 = Usuario(nome='User2', email='user2@example.com', senha='password2')
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
 
-        self.session.add(user1)
-        self.session.add(user2)
-        self.session.commit()
-
-        # Perform the test
-        response = self.client.get(f'/usuario/{user1.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/usuario/{usuario1.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['id'], user1.id)
-        self.assertEqual(data['nome'], user1.nome)
-        self.assertEqual(data['email'], user1.email)
+        self.assertEqual(data['id'], usuario1.id)
+        self.assertEqual(data['nome'], usuario1.nome)
+        self.assertEqual(data['email'], usuario1.email)
 
-        # Test non-existent user
-        id_invalido = max(user1.id, user2.id) + 1
-        response = self.client.get(f'/usuario/{id_invalido}', headers=self.get_default_test_header())
-        self.assertEqual(response.status_code, 404)
+    def test_user_cannot_see_other_user(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        response = self.client.get(f'/usuario/{usuario2.id}', headers=self.get_default_test_header())
+        data = response.json
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+
+    def test_admin_can_see_other_user(self):
+        admin = self.createUser(Perfil.ADMINISTRADOR.value)
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(admin.id)
+
+        response = self.client.get(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
+        data = response.json
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['id'], usuario.id)
+        self.assertEqual(data['nome'], usuario.nome)
+        self.assertEqual(data['email'], usuario.email)
 
     def test_add_usuario(self):
-        # Perform the test
         payload = {
-            'nome': 'Usuário de Teste',
-            'email': 'teste@email.com',
-            'senha': 'teste123'
+            'nome': self.fake.name(),
+            'email': self.fake.email(),
+            'senha': self.fake.password()
         }
         response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
-        print(data)
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['nome'], 'Usuário de Teste')
-        self.assertEqual(data['email'], 'teste@email.com')
+        self.assertEqual(data['nome'], payload['nome'])
+        self.assertEqual(data['email'], payload['email'])
 
         user = self.session.query(Usuario).filter(Usuario.id == data['id']).first()
         self.assertIsNotNone(user)
-        self.assertEqual(user.nome, 'Usuário de Teste')
+        self.assertEqual(user.nome, payload['nome'])
+        self.assertEqual(user.nome, data['nome'])
+        self.assertEqual(user.email, payload['email'])
         self.assertEqual(user.email, data['email'])
 
     def test_add_duplicated_usuario(self):
-        # Add sample data to the test database
-        user = Usuario(nome='Usuário Teste', email='teste@email.com', senha='123456')
-        self.session.add(user)
-        self.session.commit()
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
-        # Perform the test
         payload = {
-            'nome': 'Usuário Teste 2',
-            'email': user.email,
-            'senha': '123456'
+            'nome': self.fake.name(),
+            'email': usuario.email,
+            'senha': self.fake.password()
         }
 
         response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
@@ -87,31 +102,26 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
 
     def test_update_usuario(self):
-        # Add sample data to the test database
-        user = Usuario(nome='Usuário Teste', email='usuarioteste@mail.com', senha='teste1234')
-        self.session.add(user)
-        self.session.commit()
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
         # Perform the test
         payload = {
             'nome': 'Usuário Teste Alterado',
             'email': 'emailalterado@mail.com'
         }
-        response = self.client.put(f'/usuario/{user.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/usuario/{usuario.id}', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['nome'], 'Usuário Teste Alterado')
         self.assertEqual(data['email'], 'emailalterado@mail.com')
 
     def test_delete_usuario(self):
-        # Add sample data to the test database
-        user = Usuario(nome='Usuário Teste', email='usuario@email.com', senha='teste1234')
-        self.session.add(user)
-        self.session.commit()
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
-        # Perform the test
-        response = self.client.delete(f'/usuario/{user.id}', headers=self.get_default_test_header())
+        response = self.client.delete(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
 
-        user = self.session.query(Usuario).filter(Usuario.id == user.id).first()
+        user = self.session.query(Usuario).filter(Usuario.id == usuario.id).first()
         self.assertIsNone(user)

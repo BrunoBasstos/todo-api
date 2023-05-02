@@ -23,10 +23,19 @@ class BaseTestCase(TestCase):
     def setUp(self):
         self.fake = Faker()
         self.session = Session()
-        usuario = Usuario(nome="Usuário Base", email="email@base.com", senha="123456")
-        self.session.add(usuario)
-        self.session.commit()
-        self.auth_token = self.create_auth_token(usuario.id)
+        self.auth_token = None
+        Base.metadata.create_all(engine)
+
+        usuario = self.session.query(Usuario).filter(Usuario.email == 'usuariotestes@mail.com').first()
+        if not usuario:
+            usuario = Usuario(
+                nome='Usuário Teste Padrão',
+                email='usuariotestes@mail.com',
+                senha='teste123',
+                perfil=Perfil.USUARIO
+            )
+            self.session.add(usuario)
+            self.session.commit()
 
     def tearDown(self):
         Base.metadata.drop_all(engine)
@@ -34,7 +43,7 @@ class BaseTestCase(TestCase):
 
     def create_auth_token(self, user_id):
         token_payload = {
-            'exp': datetime.utcnow() + timedelta(minutes=1),
+            'exp': datetime.utcnow() + timedelta(minutes=5),
             'sub': user_id,
             'usuario': 'Teste'
         }

@@ -7,9 +7,8 @@ from models import Usuario, Tarefa
 
 class TestTarefa(BaseTestCase):
     def test_get_tarefas(self):
-        usuario = Usuario(nome="Usuario", email="usuario@mail.com", senha="123456", perfil=Perfil.USUARIO)
-        self.session.add(usuario)
-        self.session.commit()
+        usuario = self.createUser(Perfil.ADMINISTRADOR.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
         tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
                          usuario_id=usuario.id, prioridade=Prioridade.ALTA)
@@ -28,10 +27,48 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data[0]["titulo"], "Tarefa 1")
         self.assertEqual(data[1]["titulo"], "Tarefa 2")
 
-    def test_get_tarefa_by_id(self):
-        usuario = Usuario(nome="Usuario", email="usuario@mail.com", senha="123456", perfil=Perfil.USUARIO)
-        self.session.add(usuario)
+    def test_user_dont_see_other_users_tarefas(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
+                         usuario_id=usuario1.id, prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE,
+                         usuario_id=usuario2.id, prioridade=Prioridade.BAIXA)
+        self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
+
+        response = self.client.get('/tarefa', headers=self.get_default_test_header())
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data), 1)
+
+        self.assertEqual(data[0]["titulo"], "Tarefa 1")
+
+    def test_admin_can_see_other_users_tarefas(self):
+        usuario1 = self.createUser(Perfil.ADMINISTRADOR.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
+                         usuario_id=usuario1.id, prioridade=Prioridade.ALTA)
+        tarefa2 = Tarefa(titulo="Tarefa 2", descricao="Descrição da tarefa 2", status=Status.PENDENTE,
+                         usuario_id=usuario2.id, prioridade=Prioridade.BAIXA)
+        self.session.add_all([tarefa1, tarefa2])
+        self.session.commit()
+
+        response = self.client.get('/tarefa', headers=self.get_default_test_header())
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data), 2)
+
+        self.assertEqual(data[0]["titulo"], "Tarefa 1")
+        self.assertEqual(data[1]["titulo"], "Tarefa 2")
+
+    def test_get_tarefa_by_id(self):
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
         tarefa1 = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
                          usuario_id=usuario.id, prioridade=Prioridade.ALTA)
@@ -54,6 +91,9 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_add_tarefa(self):
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
+
         payload = {
             'titulo': 'Tarefa de Teste',
             'descricao': 'Descrição da tarefa de teste',
@@ -61,15 +101,12 @@ class TestTarefa(BaseTestCase):
             'prioridade': 'alta',
             'usuario_id': 0
         }
+
         response = self.client.post('/tarefa', json=payload, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 422)
         response_data = response.get_data(as_text=True)
         self.assertIn('Usuario não encontrado', response_data)
 
-        # add user
-        usuario = Usuario(nome="Teste", email="teste@mail.com", senha="123456")
-        self.session.add(usuario)
-        self.session.commit()
         payload = {
             'titulo': 'Tarefa de Teste',
             'descricao': 'Descrição da tarefa de teste',
@@ -89,9 +126,9 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['usuario_id'], payload['usuario_id'])
 
     def test_update_tarefa(self):
-        usuario = Usuario(nome="Usuario", email="usuario@mail.com", senha="123456", perfil=Perfil.USUARIO)
-        self.session.add(usuario)
-        self.session.commit()
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
+        outroUsuario = self.createUser(Perfil.USUARIO.value)
 
         tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
                         usuario_id=usuario.id, prioridade=Prioridade.ALTA)
@@ -103,25 +140,15 @@ class TestTarefa(BaseTestCase):
             'descricao': 'Descrição da tarefa de teste',
             'status': 'pendente',
             'prioridade': 'alta',
-            'usuario_id': 0
+            'usuario_id': outroUsuario.id
         }
+
         response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
-        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.status_code, 401)
         response_data = response.get_data(as_text=True)
-        self.assertIn('Usuario não encontrado', response_data)
+        self.assertIn('restrito a administradores', response_data)
 
-        # add user
-        usuario = Usuario(nome="Teste", email="teste@mail.com", senha="123456")
-        self.session.add(usuario)
-        self.session.commit()
-
-        payload = {
-            'titulo': 'Tarefa de Teste',
-            'descricao': 'Descrição da tarefa de teste',
-            'status': 'pendente',
-            'prioridade': 'alta',
-            'usuario_id': usuario.id
-        }
+        payload['usuario_id'] = usuario.id
 
         # send request again
         response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
@@ -135,9 +162,8 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['usuario_id'], payload['usuario_id'])
 
     def test_delete_tarefa(self):
-        usuario = Usuario(nome="Usuario", email="usuario@mail.com", senha="123456", perfil=Perfil.USUARIO)
-        self.session.add(usuario)
-        self.session.commit()
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
         tarefa = Tarefa(titulo="Tarefa 1", descricao="Descrição da tarefa 1", status=Status.PENDENTE,
                         usuario_id=usuario.id, prioridade=Prioridade.ALTA)
