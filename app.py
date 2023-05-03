@@ -19,7 +19,7 @@ usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e re
 tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
 status_tag = Tag(name="Status", description="Listar os status disponíveis")
 prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
-
+autenticacao_tag = Tag(name="Autenticação", description="Autenticação de usuários")
 
 @app.get('/')
 def home():
@@ -27,13 +27,6 @@ def home():
     Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
     """
     return redirect('/openapi/swagger')
-
-
-@app.get('/auth')
-@protect
-def auth():
-    return g.current_user.to_dict(), 200
-
 
 @app.get('/usuario', tags=[usuario_tag])
 @protect
@@ -376,6 +369,12 @@ def login():
         **usuario.to_dict(),
         "access_token": token
     }], 200
+
+
+@app.get('/auth')
+@protect
+def auth():
+    return g.current_user.to_dict(), 200
 
 
 if __name__ == '__main__':
