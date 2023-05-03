@@ -2,11 +2,9 @@
 
 Este é um MVP para conclusão da primeira sprint do curso de pós graduação em engenharia de software pela PUC-Rio.
 
-## Descrição
+A ToDo API é uma aplicação Flask que permite o gerenciamento de tarefas a serem realizadas, incluindo a adição, edição e remoção de usuários, tarefas e prioridades. A API é protegida por autenticação de usuário e utiliza a biblioteca JWT para geração de tokens de acesso.
 
-A ToDo API é uma aplicação Flask que permite o gerenciamento de tarefas a serem realizadas, incluindo a adição, edição e
-remoção de usuários, tarefas e prioridades. A API é protegida por autenticação de usuário e utiliza a biblioteca JWT
-para geração de tokens de acesso.
+Além disso, este projeto é composto por uma aplicação React que consome a API para fornecer uma interface amigável ao usuário. O repositório da aplicação pode ser encontrado em [todo-front](https://github.com/BrunoBasstos/todo-front).
 
 ## Rotas implementadas
 
@@ -50,10 +48,8 @@ Antes de executar o projeto, certifique-se de ter instalado:
 
 1. Clone o repositório.
 2. Crie e ative um ambiente virtual Python 3.
-    1. No Windows, utilize o comando `python -m venv venv` para criar o ambiente virtual e `venv\Scripts\activate` para
-       ativá-lo.
-    2. No Linux, utilize o comando `python3 -m venv venv` para criar o ambiente virtual e `source venv/bin/activate`
-       para ativá-lo.
+    1. No Windows, utilize o comando `python -m venv venv` para criar o ambiente virtual e `venv\Scripts\activate` para ativá-lo.
+    2. No Linux, utilize o comando `python3 -m venv venv` para criar o ambiente virtual e `source venv/bin/activate` para ativá-lo.
 3. Instale as dependências do projeto com o comando `pip install -r requirements.txt`.
 4. Inicie a aplicação com o comando `python app.py`.
 5. Acesse a documentação da API em `http://localhost:5000/openapi/swagger`.
@@ -62,10 +58,13 @@ Antes de executar o projeto, certifique-se de ter instalado:
 
 1. Clone o repositório.
 2. Abrir o terminal na pasta do projeto.
-3. Executar o comando `docker build -t todo-app .`.
-4. Executar o comando `docker run --name todo-app -p 5000:5000 todo-app`.
-   1. Note que isto criará um container com o nome todo-app. Para reiniciar a aplicação nas próximas vezes, basta executar o comando `docker start todo-app`. Caso você queira remover o container, execute `docker rm -f todo-app`.
+3. Executar o comando `docker build -t todo-api .`.
+4. Executar o comando `docker run --name todo-api -p 5000:5000 todo-api`.
+    1. Note que isto criará um container com o nome todo-api. Para reiniciar a aplicação nas próximas vezes, basta executar o comando `docker start todo-api`. Caso você queira remover o container, execute `docker rm -f todo-api`.
 
+## Testes
+
+Para executar os testes, basta executar o comando `pytest` na pasta raiz do projeto.
 
 ## Observações
 
@@ -73,9 +72,12 @@ Para facilitar o uso da API, foi criado um usuário administrador padrão com o 
 
 ## Contribuições
 
-Contribuições são sempre bem-vindas! Se você deseja contribuir com este projeto, por favor, abra uma issue para discutir
-sua ideia antes de submeter um pull request.
+Contribuições são sempre bem-vindas! Se você deseja contribuir com este projeto, por favor, abra uma issue para discutir sua ideia antes de submeter um pull request.
 
 ## Licença
 
 Este projeto está licenciado sob a licença MIT.
+
+## TODO
+- [ ] Aumentar cobertura de testes
+- [ ] Implementar estratégias de paginação
