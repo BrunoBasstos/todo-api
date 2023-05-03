@@ -161,3 +161,59 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
+
+    def test_user_cannot_get_other_user_task(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        tarefa = Tarefa(titulo='Tarefa 1', descricao='Descrição da tarefa 1', usuario_id=usuario2.id,
+                        status=Status.PENDENTE, prioridade=Prioridade.MEDIA)
+        self.session.add(tarefa)
+        self.session.commit()
+
+        response = self.client.get(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+        self.assertEqual(data[0]['msg'], 'Acesso a tarefas de terceiros é restrito a administradores.')
+
+    def test_user_cannot_update_other_user_task(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        tarefa = Tarefa(titulo='Tarefa 1', descricao='Descrição da tarefa 1', usuario_id=usuario2.id,
+                        status=Status.PENDENTE, prioridade=Prioridade.MEDIA)
+        self.session.add(tarefa)
+        self.session.commit()
+
+        payload = {
+            'titulo': 'Tarefa de Teste',
+            'descricao': 'Descrição da tarefa de teste',
+            'status': 'pendente',
+            'prioridade': 'alta',
+            'usuario_id': usuario2.id
+        }
+
+        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+        self.assertEqual(data[0]['msg'], 'Alteração de tarefas de terceiros é restrito a administradores.')
+
+    def test_user_can_get_priority(self):
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
+        response = self.client.get('/prioridade', headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data), Prioridade.__len__())
+
+    def test_user_can_get_status(self):
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
+        response = self.client.get('/status', headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data), Status.__len__())

@@ -1,9 +1,9 @@
 # /tests/test_usuario.py
 import json
 
-from enums import Perfil
+from enums import Perfil, Status, Prioridade
 from tests.base import BaseTestCase
-from models import Usuario
+from models import Usuario, Tarefa
 
 
 class TestUsuario(BaseTestCase):
@@ -113,7 +113,8 @@ class TestUsuario(BaseTestCase):
         # Perform the test
         payload = {
             'nome': 'Usuário Teste Alterado',
-            'email': 'emailalterado@mail.com'
+            'email': 'emailalterado@mail.com',
+            'senha': 'senhateste'
         }
         response = self.client.put(f'/usuario/{usuario.id}', json=payload, headers=self.get_default_test_header())
         data = response.json
@@ -124,6 +125,82 @@ class TestUsuario(BaseTestCase):
     def test_delete_usuario(self):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario.id)
+
+        response = self.client.delete(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
+        self.assertEqual(response.status_code, 200)
+
+        user = self.session.query(Usuario).filter(Usuario.id == usuario.id).first()
+        self.assertIsNone(user)
+
+    def test_user_can_revalidate_his_data(self):
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
+
+        response = self.client.get('/auth', headers=self.get_default_test_header())
+        data = response.json
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['id'], usuario.id)
+        self.assertEqual(data['nome'], usuario.nome)
+        self.assertEqual(data['email'], usuario.email)
+
+    def test_cannot_get_invalid_user(self):
+        admin = self.createUser(Perfil.ADMINISTRADOR.value)
+        self.auth_token = self.create_auth_token(admin.id)
+
+        response = self.client.get('/usuario/999', headers=self.get_default_test_header())
+        data = response.json
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(data[0]['msg'], 'Usuário não encontrado.')
+
+    def test_user_cannot_edit_other_user(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        payload = {
+            'nome': 'Usuário Teste Alterado',
+            'email': 'asd@asd.asd',
+            'senha': '123123'
+        }
+
+        response = self.client.put(f'/usuario/{usuario2.id}', json=payload, headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+
+    def test_edited_user_cannot_have_repeated_email(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        payload = {
+            'nome': 'Usuário Teste Alterado',
+            'email': usuario2.email,
+            'senha': '123123'
+        }
+
+        response = self.client.put(f'/usuario/{usuario1.id}', json=payload, headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
+
+    def test_user_cannot_delete_other_user(self):
+        usuario1 = self.createUser(Perfil.USUARIO.value)
+        usuario2 = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario1.id)
+
+        response = self.client.delete(f'/usuario/{usuario2.id}', headers=self.get_default_test_header())
+        data = response.json
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+        self.assertEqual(data[0]['msg'], 'Exclusão de perfil de terceiros é restrito a administradores.')
+
+    def test_admin_can_delete_other_user(self):
+        admin = self.createUser(Perfil.ADMINISTRADOR.value)
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(admin.id)
 
         response = self.client.delete(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)

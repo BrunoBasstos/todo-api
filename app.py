@@ -23,7 +23,6 @@ prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades dispo
 
 
 @app.get('/')
-@protect
 def home():
     """
     Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
