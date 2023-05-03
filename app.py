@@ -18,7 +18,8 @@ CORS(app)
 docs_tag = Tag(name="Documentação", description="Documentação da API")
 autenticacao_tag = Tag(name="Autenticação", description="Autenticação de usuários")
 status_tag = Tag(name="Status", description="Listar os status disponíveis")
-prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
+util_tag = Tag(name="Utils",
+               description="Rotas para retornar informações úteis para a aplicação: lista de status, lista de prioridades e dados do usuário autenticado.")
 usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e remover usuarios", )
 tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
 
@@ -35,21 +36,14 @@ def home():
     return redirect('/openapi/swagger')
 
 
-@app.get('/auth', tags=[autenticacao_tag])
-@protect
-def auth():
-    """
-    Retorna o usuário autenticado com base no token de autenticação
-
-    Usado para revalidação do Token em caso de refresh de página.
-    """
-    return g.current_user.to_dict(), 200
-
-
 @app.post('/login', tags=[autenticacao_tag])
 def login(body: LoginSchema):
     """
     Autentica um usuário e retorna uma instância do usuário autenticado com um token de acesso.
+
+    Todas as rotas são protegidas por autenticação, exceto a rota de login e a rota de documentação.
+
+    Para consumir as rotas protegidas, é necessário enviar o token de acesso obitido nesta rota no header Authorization, no formato Bearer <token>.
     """
     email = body.email
     senha = body.senha
@@ -72,7 +66,18 @@ def login(body: LoginSchema):
     }], 200
 
 
-@app.get('/prioridade', tags=[prioridade_tag])
+@app.get('/auth', tags=[util_tag])
+@protect
+def auth():
+    """
+    Retorna o usuário autenticado com base no token de autenticação
+
+    Usado para revalidação do Token em caso de refresh de página.
+    """
+    return g.current_user.to_dict(), 200
+
+
+@app.get('/prioridade', tags=[util_tag])
 @protect
 def get_prioridades():
     """
@@ -81,7 +86,7 @@ def get_prioridades():
     return [prioridade.value for prioridade in Prioridade], 200
 
 
-@app.get('/status', tags=[status_tag])
+@app.get('/status', tags=[util_tag])
 @protect
 def get_status():
     """
