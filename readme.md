@@ -72,7 +72,8 @@ Para facilitar o uso da API, foi criado um usuário administrador padrão com o 
 
 ## Contribuições
 
-Contribuições são sempre bem-vindas! Se você deseja contribuir com este projeto, por favor, abra uma issue para discutir sua ideia antes de submeter um pull request.
+Contribuições são sempre bem-vindas! Se você deseja contribuir com este projeto, por favor, abra uma issue para discutir
+sua ideia antes de submeter um pull request.
 
 ## Licença
 
