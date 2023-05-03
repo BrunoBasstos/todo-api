@@ -190,7 +190,13 @@ def update_usuario(body: UsuarioUpdateSchema):
         }], 401
 
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
-
+    if usuario is None:
+        return [{
+            "msg": "Usuário não encontrado.",
+            "type": "not_found"
+        }], 404
+        
+    
     usuario.nome = body.nome if body.nome is not None else usuario.nome
     if body.email is not None and body.email != usuario.email:
         usuario.email = body.email
