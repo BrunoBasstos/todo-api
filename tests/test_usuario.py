@@ -34,7 +34,7 @@ class TestUsuario(BaseTestCase):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(admin.id)
 
-        response = self.client.get('/usuario', headers=self.get_default_test_header())
+        response = self.client.get('/usuarios', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
 
@@ -48,7 +48,7 @@ class TestUsuario(BaseTestCase):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario.id)
 
-        response = self.client.get('/usuario', headers=self.get_default_test_header())
+        response = self.client.get('/usuarios', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 401)
         self.assertEqual(data[0]['type'], 'authorization')
@@ -59,7 +59,7 @@ class TestUsuario(BaseTestCase):
         usuario2 = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario1.id)
 
-        response = self.client.get(f'/usuario/{usuario1.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/usuario?id={usuario1.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -72,7 +72,7 @@ class TestUsuario(BaseTestCase):
         usuario2 = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario1.id)
 
-        response = self.client.get(f'/usuario/{usuario2.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/usuario?id={usuario2.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 401)
@@ -83,7 +83,7 @@ class TestUsuario(BaseTestCase):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(admin.id)
 
-        response = self.client.get(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/usuario?id={usuario.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -112,11 +112,12 @@ class TestUsuario(BaseTestCase):
 
         # Perform the test
         payload = {
+            'id': usuario.id,
             'nome': 'Usuário Teste Alterado',
             'email': 'emailalterado@mail.com',
             'senha': 'senhateste'
         }
-        response = self.client.put(f'/usuario/{usuario.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['nome'], 'Usuário Teste Alterado')
@@ -126,7 +127,7 @@ class TestUsuario(BaseTestCase):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario.id)
 
-        response = self.client.delete(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
+        response = self.client.delete(f'/usuario', json={"id":usuario.id}, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
 
         user = self.session.query(Usuario).filter(Usuario.id == usuario.id).first()
@@ -148,7 +149,7 @@ class TestUsuario(BaseTestCase):
         admin = self.createUser(Perfil.ADMINISTRADOR.value)
         self.auth_token = self.create_auth_token(admin.id)
 
-        response = self.client.get('/usuario/999', headers=self.get_default_test_header())
+        response = self.client.get('/usuario?id=999', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 404)
@@ -160,12 +161,13 @@ class TestUsuario(BaseTestCase):
         self.auth_token = self.create_auth_token(usuario1.id)
 
         payload = {
+            'id': usuario2.id,
             'nome': 'Usuário Teste Alterado',
             'email': 'asd@asd.asd',
             'senha': '123123'
         }
 
-        response = self.client.put(f'/usuario/{usuario2.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 401)
         self.assertEqual(data[0]['type'], 'authorization')
@@ -176,12 +178,13 @@ class TestUsuario(BaseTestCase):
         self.auth_token = self.create_auth_token(usuario1.id)
 
         payload = {
+            'id': usuario1.id,
             'nome': 'Usuário Teste Alterado',
             'email': usuario2.email,
             'senha': '123123'
         }
 
-        response = self.client.put(f'/usuario/{usuario1.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/usuario', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 409)
         self.assertEqual(data[0]['msg'], 'Já existe um usuário com este email.')
@@ -191,7 +194,7 @@ class TestUsuario(BaseTestCase):
         usuario2 = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(usuario1.id)
 
-        response = self.client.delete(f'/usuario/{usuario2.id}', headers=self.get_default_test_header())
+        response = self.client.delete(f'/usuario', json={"id":usuario2.id}, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 401)
         self.assertEqual(data[0]['type'], 'authorization')
@@ -202,7 +205,7 @@ class TestUsuario(BaseTestCase):
         usuario = self.createUser(Perfil.USUARIO.value)
         self.auth_token = self.create_auth_token(admin.id)
 
-        response = self.client.delete(f'/usuario/{usuario.id}', headers=self.get_default_test_header())
+        response = self.client.delete(f'/usuario', json={"id":usuario.id}, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
 
         user = self.session.query(Usuario).filter(Usuario.id == usuario.id).first()

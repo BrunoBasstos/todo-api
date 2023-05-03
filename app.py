@@ -15,24 +15,80 @@ info = Info(title="ToDo API", version="1.0.0")
 app = OpenAPI(__name__, info=info)
 CORS(app)
 
-usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e remover usuarios")
-tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
+docs_tag = Tag(name="Documentação", description="Documentação da API")
+autenticacao_tag = Tag(name="Autenticação", description="Autenticação de usuários")
 status_tag = Tag(name="Status", description="Listar os status disponíveis")
 prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades disponíveis")
-autenticacao_tag = Tag(name="Autenticação", description="Autenticação de usuários")
+usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e remover usuarios", )
+tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
 
-@app.get('/')
+
+@app.get('/', tags=[docs_tag])
 def home():
     """
     Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
     """
     return redirect('/openapi/swagger')
 
-@app.get('/usuario', tags=[usuario_tag])
+@app.get('/auth', tags=[autenticacao_tag])
+@protect
+def auth():
+    """
+    Retorna o usuário autenticado com base no token de autenticação
+
+    Usado para revalidação do Token em caso de refresh de página.
+    """
+    return g.current_user.to_dict(), 200
+@app.post('/login', tags=[autenticacao_tag])
+def login(body: LoginSchema):
+    """
+    Autentica um usuário e retorna uma instância do usuário autenticado com um token de acesso.
+    """
+    email = request.json.get('email')
+    senha = request.json.get('senha')
+    session = Session()
+    usuario = session.query(Usuario).filter_by(email=email).first()
+
+    if usuario is None or not bcrypt.checkpw(senha.encode('utf-8'), usuario.senha.encode('utf-8')):
+        return [{"msg": "Credenciais inválidas"}], 401
+
+    payload = {
+        'exp': datetime.utcnow() + timedelta(days=1),
+        'sub': usuario.id,
+        'usuario': usuario.nome
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+    return [{
+        **usuario.to_dict(),
+        "access_token": token
+    }], 200
+
+@app.get('/prioridade', tags=[prioridade_tag])
+@protect
+def get_prioridades():
+    """
+    Retorna uma lista de todas as prioridades cadastradas na base de dados
+    """
+    return [prioridade.value for prioridade in Prioridade], 200
+
+
+@app.get('/status', tags=[status_tag])
+@protect
+def get_status():
+    """
+    Retorna uma lista de todos os status cadastrados na base de dados
+    """
+    return [status.value for status in Status], 200
+
+
+@app.get('/usuarios', tags=[usuario_tag])
 @protect
 def get_usuarios():
     """
-    Retorna uma lista de todos os usuarios cadastrados na base de dados
+    Retorna uma lista de todos os usuarios cadastrados na base de dados.
+
+    Apenas administradores podem acessar essa rota.
     """
     if g.current_user.perfil != Perfil.ADMINISTRADOR:
         return [{
@@ -46,13 +102,15 @@ def get_usuarios():
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
-@app.get('/usuario/<int:id>', tags=[usuario_tag])
+@app.get('/usuario', tags=[usuario_tag])
 @protect
-def get_usuario():
+def get_usuario(query: UsuarioIdSchema):
     """
-    Retorna um usuario específico da base de dados
+    Retorna um usuario específico da base de dados.
+
+    Apenas administradores podem acessar o perfil de terceiros.
     """
-    id = request.view_args['id']
+    id = query.id
     if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
         return [{
             "msg": "Acesso ao perfil de terceiros é restrito a administradores.",
@@ -74,7 +132,7 @@ def get_usuario():
 @app.post('/usuario', tags=[usuario_tag])
 def add_usuario(body: UsuarioSchema):
     """
-    Adiciona um novo Usuario à base de dados
+    Adiciona um novo Usuario à base de dados.
     """
     senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
     senha_str = senha_criptografada.decode('utf-8')
@@ -103,13 +161,13 @@ def add_usuario(body: UsuarioSchema):
         raise UnprocessableEntity(error_msg)
 
 
-@app.put('/usuario/<int:id>', tags=[usuario_tag])
+@app.put('/usuario', tags=[usuario_tag])
 @protect
 def update_usuario(body: UsuarioUpdateSchema):
     """
-    Atualiza um usuario específico da base de dados
+    Atualiza um usuario específico da base de dados.
     """
-    id = request.view_args['id']
+    id = body.id
     session = Session()
 
     if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
@@ -119,9 +177,13 @@ def update_usuario(body: UsuarioUpdateSchema):
         }], 401
 
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
+
     usuario.nome = body.nome if body.nome is not None else usuario.nome
-    usuario.email = body.email if body.email is not None else usuario.email
+    if body.email is not None and body.email != usuario.email:
+        usuario.email = body.email
+
     usuario.perfil = body.perfil if body.perfil is not None else usuario.perfil
+
     if body.senha is not None:
         senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
         usuario.senha = senha_criptografada.decode('utf-8')
@@ -138,13 +200,13 @@ def update_usuario(body: UsuarioUpdateSchema):
         }], 409
 
 
-@app.delete('/usuario/<int:id>', tags=[usuario_tag])
+@app.delete('/usuario', tags=[usuario_tag])
 @protect
-def delete_usuario():
+def delete_usuario(body: UsuarioIdSchema):
     """
-    Deleta um usuario específico da base de dados
+    Deleta um usuario específico da base de dados.
     """
-    id = request.view_args['id']
+    id = body.id
     session = Session()
 
     if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
@@ -167,11 +229,11 @@ def delete_usuario():
         raise UnprocessableEntity(error_msg)
 
 
-@app.get('/tarefa', tags=[tarefa_tag])
+@app.get('/tarefas', tags=[tarefa_tag])
 @protect
 def get_tarefas():
     """
-    Retorna uma lista de todas as tarefas cadastradas na base de dados
+    Retorna uma lista de todas as tarefas cadastradas na base de dados.
     """
     session = Session()
 
@@ -190,13 +252,13 @@ def get_tarefas():
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
-@app.get('/tarefa/<int:id>', tags=[tarefa_tag])
+@app.get('/tarefa', tags=[tarefa_tag])
 @protect
-def get_tarefa():
+def get_tarefa(query: TarefaIdSchema):
     """
-    Retorna uma tarefa específica da base de dados
+    Retorna uma tarefa específica da base de dados.
     """
-    id = request.view_args['id']
+    id = query.id
     session = Session()
     tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
     session.close()
@@ -219,7 +281,7 @@ def get_tarefa():
 @protect
 def add_tarefa(body: TarefaSchema):
     """
-    Adiciona uma nova Tarefa à base de dados
+    Adiciona uma nova Tarefa à base de dados.
     """
     session = Session()
 
@@ -256,14 +318,14 @@ def add_tarefa(body: TarefaSchema):
         raise UnprocessableEntity(error_msg)
 
 
-@app.put('/tarefa/<int:id>', tags=[tarefa_tag])
+@app.put('/tarefa', tags=[tarefa_tag])
 @protect
-def update_tarefa(body: TarefaSchema):
+def update_tarefa(body: TarefaUpdateSchema):
     """
-    Atualiza uma tarefa específica da base de dados
+    Atualiza uma tarefa específica da base de dados.
     """
     session = Session()
-    id = request.view_args['id']
+    id = body.id
 
     if not Status.is_valid(body.status.value):
         error_msg = "Status inválido."
@@ -308,73 +370,26 @@ def update_tarefa(body: TarefaSchema):
     return tarefa_dict, 200
 
 
-@app.delete('/tarefa/<int:id>', tags=[tarefa_tag])
+@app.delete('/tarefa', tags=[tarefa_tag])
 @protect
-def delete_tarefa():
+def delete_tarefa(body: TarefaIdSchema):
     """
-    Deleta uma tarefa específica da base de dados
+    Deleta uma tarefa específica da base de dados.
     """
     try:
-        id = request.view_args['id']
+        id = body.id
         session = Session()
         tarefa = session.query(Tarefa).filter_by(id=id).first()
         session.delete(tarefa)
         session.commit()
         session.close()
         return [{
-            "msg": "Usuário excluído com sucesso.",
+            "msg": "Tarefa excluída com sucesso.",
             "type": "success"
         }], 200
     except Exception as e:
         error_msg = "Não foi possível deletar item."
         raise UnprocessableEntity(error_msg)
-
-
-@app.get('/prioridade', tags=[prioridade_tag])
-@protect
-def get_prioridades():
-    """
-    Retorna uma lista de todas as prioridades cadastradas na base de dados
-    """
-    return [prioridade.value for prioridade in Prioridade], 200
-
-
-@app.get('/status', tags=[status_tag])
-@protect
-def get_status():
-    """
-    Retorna uma lista de todos os status cadastrados na base de dados
-    """
-    return [status.value for status in Status], 200
-
-
-@app.post('/login')
-def login():
-    email = request.json.get('email')
-    senha = request.json.get('senha')
-    session = Session()
-    usuario = session.query(Usuario).filter_by(email=email).first()
-
-    if usuario is None or not bcrypt.checkpw(senha.encode('utf-8'), usuario.senha.encode('utf-8')):
-        return [{"msg": "Credenciais inválidas"}], 401
-
-    payload = {
-        'exp': datetime.utcnow() + timedelta(days=1),
-        'sub': usuario.id,
-        'usuario': usuario.nome
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-
-    return [{
-        **usuario.to_dict(),
-        "access_token": token
-    }], 200
-
-
-@app.get('/auth')
-@protect
-def auth():
-    return g.current_user.to_dict(), 200
 
 
 if __name__ == '__main__':

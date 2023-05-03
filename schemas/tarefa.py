@@ -6,6 +6,9 @@ from datetime import datetime
 
 
 class TarefaSchema(BaseModel):
+    """
+    Define como uma nova tarefa a ser inserida deve ser representado
+    """
     titulo: str = Field(example="Comprar pão", description="O título da tarefa")
     descricao: str = Field(example="Ir na padaria da esquina", description="A descrição da tarefa")
     status: Status = Field(example=Status.PENDENTE, description="O status da tarefa")
@@ -25,3 +28,17 @@ class TarefaSchema(BaseModel):
         if not isinstance(v, str) or v == '':
             raise ValueError('Descrição deve ser uma string')
         return v
+
+
+class TarefaUpdateSchema(TarefaSchema):
+    """
+    Define como uma tarefa a ser atualizado deve ser representado
+    """
+    id: int = Field(None, example=1, description="ID do usuário")
+
+
+class TarefaIdSchema(BaseModel):
+    """
+    Define como uma tarefa a ser deletada deve ser representado
+    """
+    id: int = Field(None, example=1, description="ID da Tarefa")

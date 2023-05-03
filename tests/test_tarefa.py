@@ -17,7 +17,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get('/tarefa', headers=self.get_default_test_header())
+        response = self.client.get('/tarefas', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data), 2)
@@ -39,7 +39,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get('/tarefa', headers=self.get_default_test_header())
+        response = self.client.get('/tarefas', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data), 1)
@@ -58,7 +58,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get('/tarefa', headers=self.get_default_test_header())
+        response = self.client.get('/tarefas', headers=self.get_default_test_header())
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data), 2)
@@ -78,7 +78,7 @@ class TestTarefa(BaseTestCase):
         self.session.add_all([tarefa1, tarefa2])
         self.session.commit()
 
-        response = self.client.get(f'/tarefa/{tarefa1.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/tarefa?id={tarefa1.id}', headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -87,7 +87,7 @@ class TestTarefa(BaseTestCase):
         self.assertEqual(data['descricao'], tarefa1.descricao)
 
         id_invalido = max(tarefa1.id, tarefa2.id) + 1
-        response = self.client.get(f'/tarefa/{id_invalido}', headers=self.get_default_test_header())
+        response = self.client.get(f'/tarefa?id={id_invalido}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
 
     def test_add_tarefa(self):
@@ -123,6 +123,7 @@ class TestTarefa(BaseTestCase):
         self.session.commit()
 
         payload = {
+            'id': tarefa.id,
             'titulo': 'Tarefa de Teste',
             'descricao': 'Descrição da tarefa de teste',
             'status': 'pendente',
@@ -130,7 +131,7 @@ class TestTarefa(BaseTestCase):
             'usuario_id': outroUsuario.id
         }
 
-        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/tarefa', json=payload, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 401)
         response_data = response.get_data(as_text=True)
         self.assertIn('restrito a administradores', response_data)
@@ -138,7 +139,7 @@ class TestTarefa(BaseTestCase):
         payload['usuario_id'] = usuario.id
 
         # send request again
-        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/tarefa', json=payload, headers=self.get_default_test_header())
         data = response.json
 
         self.assertEqual(response.status_code, 200)
@@ -157,9 +158,9 @@ class TestTarefa(BaseTestCase):
         self.session.add(tarefa)
         self.session.commit()
 
-        response = self.client.delete(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
+        response = self.client.delete(f'/tarefa', json={"id":tarefa.id}, headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/tarefa?id={tarefa.id}', headers=self.get_default_test_header())
         self.assertEqual(response.status_code, 404)
 
     def test_user_cannot_get_other_user_task(self):
@@ -172,7 +173,7 @@ class TestTarefa(BaseTestCase):
         self.session.add(tarefa)
         self.session.commit()
 
-        response = self.client.get(f'/tarefa/{tarefa.id}', headers=self.get_default_test_header())
+        response = self.client.get(f'/tarefa?id={tarefa.id}', headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 401)
         self.assertEqual(data[0]['type'], 'authorization')
@@ -189,6 +190,7 @@ class TestTarefa(BaseTestCase):
         self.session.commit()
 
         payload = {
+            'id': tarefa.id,
             'titulo': 'Tarefa de Teste',
             'descricao': 'Descrição da tarefa de teste',
             'status': 'pendente',
@@ -196,7 +198,7 @@ class TestTarefa(BaseTestCase):
             'usuario_id': usuario2.id
         }
 
-        response = self.client.put(f'/tarefa/{tarefa.id}', json=payload, headers=self.get_default_test_header())
+        response = self.client.put(f'/tarefa', json=payload, headers=self.get_default_test_header())
         data = response.json
         self.assertEqual(response.status_code, 401)
         self.assertEqual(data[0]['type'], 'authorization')
