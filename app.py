@@ -3,7 +3,6 @@ from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import g, redirect, request
 from pydantic import ValidationError
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
 from models import Session, Usuario, Tarefa
@@ -26,23 +25,31 @@ prioridade_tag = Tag(name="Prioridade", description="Listar as prioridades dispo
 @app.get('/')
 @protect
 def home():
-    """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
+    """
+    Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
     """
     return redirect('/openapi/swagger')
 
+@app.get('/auth')
+@protect
+def auth():
+    return g.current_user.to_dict(), 200
 
 @app.get('/usuario', tags=[usuario_tag])
 @protect
 def get_usuarios():
-    """Retorna uma lista de todos os usuarios cadastrados na base de dados
+    """
+    Retorna uma lista de todos os usuarios cadastrados na base de dados
     """
     if g.current_user.perfil != Perfil.ADMINISTRADOR:
         return [{
             "msg": "Acesso restrito a administradores.",
             "type": "authorization"
         }], 401
+
     session = Session()
     usuarios = session.query(Usuario).all()
+    session.close()
     return [usuario.to_dict() for usuario in usuarios], 200
 
 
@@ -61,9 +68,12 @@ def get_usuario():
 
     session = Session()
     usuario = session.query(Usuario).filter(Usuario.id == id).first()
-
+    session.close()
     if usuario is None:
-        return {"message": "Usuario não encontrado"}, 404
+        return [{
+            "msg": "Usuário não encontrado.",
+            "type": "not_found"
+        }], 404
 
     return usuario.to_dict(), 200
 
@@ -82,30 +92,22 @@ def add_usuario(body: UsuarioSchema):
     )
 
     try:
-        # criando conexão com a base
         session = Session()
-        # adicionando usuario
         session.add(usuario)
-        # efetivando o camando de adição de novo item na tabela
         session.commit()
-        return usuario.to_dict(), 200
+        usuario_dict = usuario.to_dict()
+        session.close()
+        return usuario_dict, 200
 
     except IntegrityError as e:
-        session.rollback()
         return [{
             "msg": "Já existe um usuário com este email.",
             "type": "integrity_error"
         }], 409
 
-    except ValidationError as e:
-        session.rollback()
-        raise UnprocessableEntity(e.errors)
-
     except Exception as e:
-        return {
-            "msg": "Não foi possível salvar novo item.",
-            "type": "unknown_error"
-        }, 409
+        error_msg = "Não foi possível salvar novo item"
+        raise UnprocessableEntity(error_msg)
 
 
 @app.put('/usuario/<int:id>', tags=[usuario_tag])
@@ -131,8 +133,16 @@ def update_usuario(body: UsuarioUpdateSchema):
         senha_criptografada = bcrypt.hashpw(body.senha.encode('utf-8'), bcrypt.gensalt())
         usuario.senha = senha_criptografada.decode('utf-8')
 
-    session.commit()
-    return usuario.to_dict(), 200
+    try:
+        session.commit()
+        usuario_dict = usuario.to_dict()
+        session.close()
+        return usuario_dict, 200
+    except IntegrityError as e:
+        return [{
+            "msg": "Já existe um usuário com este email.",
+            "type": "integrity_error"
+        }], 409
 
 
 @app.delete('/usuario/<int:id>', tags=[usuario_tag])
@@ -144,21 +154,24 @@ def delete_usuario():
     id = request.view_args['id']
     session = Session()
 
-    t1 = g.current_user.id
-    t2 = id
-    t3 = g.current_user.id != id
-    t4 = g.current_user.perfil != Perfil.ADMINISTRADOR
-
     if g.current_user.perfil != Perfil.ADMINISTRADOR and g.current_user.id != id:
         return [{
             "msg": "Exclusão de perfil de terceiros é restrito a administradores.",
             "type": "authorization"
         }], 401
 
-    usuario = session.query(Usuario).filter_by(id=id).first()
-    session.delete(usuario)
-    session.commit()
-    return usuario.to_dict(), 200
+    try:
+        usuario = session.query(Usuario).filter_by(id=id).first()
+        session.delete(usuario)
+        session.commit()
+        session.close()
+        return [{
+            "msg": "Usuário excluído com sucesso.",
+            "type": "success"
+        }], 200
+    except Exception as e:
+        error_msg = "Não foi possível excluir o usuário"
+        raise UnprocessableEntity(error_msg)
 
 
 @app.get('/tarefa', tags=[tarefa_tag])
@@ -179,6 +192,8 @@ def get_tarefas():
         tarefas = session.query(Tarefa).filter_by(usuario_id=usuario_id).order_by(
             Prioridade.case_order(Tarefa.prioridade)
         ).all()
+
+    session.close()
     return [tarefa.to_dict() for tarefa in tarefas], 200
 
 
@@ -191,7 +206,7 @@ def get_tarefa():
     id = request.view_args['id']
     session = Session()
     tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
-
+    session.close()
     if tarefa is None:
         return [{
             "msg": "Tarefa não encontrada.",
@@ -239,32 +254,13 @@ def add_tarefa(body: TarefaSchema):
     try:
         session.add(tarefa)
         session.commit()
-        return tarefa.to_dict(), 200
-
-
-    except IntegrityError as e:
-        # como a duplicidade do nome é a provável razão do IntegrityError
-        error_msg = "Tarefa de mesmo nome já salvo na base."
-        raise UnprocessableEntity(error_msg)
-
+        tarefa_dict = tarefa.to_dict()
+        session.close()
+        return tarefa_dict, 200
 
     except Exception as e:
-        # caso um erro fora do previsto
         error_msg = "Não foi possível salvar novo item."
         raise UnprocessableEntity(error_msg)
-
-
-@app.post('/tarefa/{id}/complete', tags=[tarefa_tag])
-@protect
-def complete_tarefa(id: int):
-    """
-    Marca uma tarefa específica como concluída na base de dados
-    """
-    session = Session()
-    tarefa = session.query(Tarefa).filter_by(id=id).first()
-    tarefa.status = "completa"
-    session.commit()
-    return tarefa.to_dict(), 200
 
 
 @app.put('/tarefa/<int:id>', tags=[tarefa_tag])
@@ -306,9 +302,17 @@ def update_tarefa(body: TarefaSchema):
     tarefa.status = body.status
     tarefa.prioridade = body.prioridade
     tarefa.usuario_id = body.usuario_id
-    session.commit()
 
-    return tarefa.to_dict(), 200
+    if body.status == Status.CONCLUIDA and tarefa.data_conclusao is None:
+        tarefa.data_conclusao = datetime.now()
+
+    if body.status != Status.CONCLUIDA:
+        tarefa.data_conclusao = None
+
+    session.commit()
+    tarefa_dict = tarefa.to_dict()
+    session.close()
+    return tarefa_dict, 200
 
 
 @app.delete('/tarefa/<int:id>', tags=[tarefa_tag])
@@ -317,12 +321,20 @@ def delete_tarefa():
     """
     Deleta uma tarefa específica da base de dados
     """
-    id = request.view_args['id']
-    session = Session()
-    tarefa = session.query(Tarefa).filter_by(id=id).first()
-    session.delete(tarefa)
-    session.commit()
-    return tarefa.to_dict(), 200
+    try:
+        id = request.view_args['id']
+        session = Session()
+        tarefa = session.query(Tarefa).filter_by(id=id).first()
+        session.delete(tarefa)
+        session.commit()
+        session.close()
+        return [{
+            "msg": "Usuário excluído com sucesso.",
+            "type": "success"
+        }], 200
+    except Exception as e:
+        error_msg = "Não foi possível deletar item."
+        raise UnprocessableEntity(error_msg)
 
 
 @app.get('/prioridade', tags=[prioridade_tag])
@@ -359,7 +371,7 @@ def login():
         'usuario': usuario.nome
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    # retornar o usuario e o token
+
     return [{
         **usuario.to_dict(),
         "access_token": token

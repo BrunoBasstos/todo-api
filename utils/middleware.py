@@ -24,7 +24,7 @@ def protect(func):
             usuario = session.query(Usuario).filter(Usuario.id == user_id).first()
             g.current_user = usuario
         except Exception as e:
-            return jsonify({'message': 'Invalid token'}), 401
+            return jsonify({'message': f'Invalid token {e}'}), 401
         return func(*args, **kwargs)
 
     return wrapper

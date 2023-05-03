@@ -8,6 +8,27 @@ from models import Usuario
 
 class TestUsuario(BaseTestCase):
 
+    def test_add_usuario(self):
+        payload = {
+            'nome': self.fake.name(),
+            'email': self.fake.email(),
+            'senha': self.fake.password()
+        }
+
+        response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
+        data = response.json
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['nome'], payload['nome'])
+        self.assertEqual(data['email'], payload['email'])
+
+        user = self.session.query(Usuario).filter(Usuario.id == data['id']).first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.nome, payload['nome'])
+        self.assertEqual(user.nome, data['nome'])
+        self.assertEqual(user.email, payload['email'])
+        self.assertEqual(user.email, data['email'])
+
     def test_admin_can_get_usuarios(self):
         admin = self.createUser(Perfil.ADMINISTRADOR.value)
         usuario = self.createUser(Perfil.USUARIO.value)
@@ -20,14 +41,18 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(data[len(data) - 2]["nome"], admin.nome)
         self.assertEqual(data[len(data) - 1]["nome"], usuario.nome)
 
-    def test_user_cannot_get_usuarios(self):
-        usuario1 = self.createUser(Perfil.USUARIO.value)
-        self.auth_token = self.create_auth_token(usuario1.id)
+    def test_users_will_get_theirselves_in_get_usuario(self):
+        for i in range(5):
+            self.createUser(Perfil.USUARIO.value)
+
+        usuario = self.createUser(Perfil.USUARIO.value)
+        self.auth_token = self.create_auth_token(usuario.id)
 
         response = self.client.get('/usuario', headers=self.get_default_test_header())
         data = json.loads(response.data)
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(data[0]['type'], 'authorization')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["nome"], usuario.nome)
 
     def test_get_usuario_by_id(self):
         usuario1 = self.createUser(Perfil.USUARIO.value)
@@ -65,26 +90,6 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(data['id'], usuario.id)
         self.assertEqual(data['nome'], usuario.nome)
         self.assertEqual(data['email'], usuario.email)
-
-    def test_add_usuario(self):
-        payload = {
-            'nome': self.fake.name(),
-            'email': self.fake.email(),
-            'senha': self.fake.password()
-        }
-        response = self.client.post('/usuario', json=payload, headers=self.get_default_test_header())
-        data = response.json
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['nome'], payload['nome'])
-        self.assertEqual(data['email'], payload['email'])
-
-        user = self.session.query(Usuario).filter(Usuario.id == data['id']).first()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.nome, payload['nome'])
-        self.assertEqual(user.nome, data['nome'])
-        self.assertEqual(user.email, payload['email'])
-        self.assertEqual(user.email, data['email'])
 
     def test_add_duplicated_usuario(self):
         usuario = self.createUser(Perfil.USUARIO.value)

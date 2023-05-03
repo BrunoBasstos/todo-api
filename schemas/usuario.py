@@ -6,15 +6,16 @@ from enums import Perfil
 from schemas import TarefaSchema
 
 
-class UsuarioViewSchema(BaseModel):
-    """
-    Define a representação visual de um usuario
-    """
-    id: Optional[int] = Field(None, example=1, description="ID do usuário")
-    nome: str = Field(..., example="Joe Doe", description="Nome do usuário")
-    email: str = Field(..., example="joedoe@email.com", description="Email do usuário")
-    perfil: Perfil = Field(..., example=Perfil.USUARIO, description="Perfil do usuário")
-    tarefas: Optional[List[TarefaSchema]] = None
+#
+# class UsuarioViewSchema(BaseModel):
+#     """
+#     Define a representação visual de um usuario
+#     """
+#     id: Optional[int] = Field(None, example=1, description="ID do usuário")
+#     nome: str = Field(..., example="Joe Doe", description="Nome do usuário")
+#     email: str = Field(..., example="joedoe@email.com", description="Email do usuário")
+#     perfil: Perfil = Field(..., example=Perfil.USUARIO, description="Perfil do usuário")
+#     tarefas: Optional[List[TarefaSchema]] = None
 
 
 class UsuarioSchema(BaseModel):
@@ -25,7 +26,6 @@ class UsuarioSchema(BaseModel):
     email: str = Field(example="joedoe@email.com", description="Email do usuário")
     senha: str = Field(example="12345", description="Senha do usuário")
     perfil: Optional[Perfil] = Field(example=Perfil.USUARIO, description="Perfil do usuário")
-    tarefas: Optional[List[TarefaSchema]] = None
 
     @validator('nome')
     def nome_must_be_str(cls, v):
@@ -58,19 +58,18 @@ class UsuarioUpdateSchema(UsuarioSchema):
     senha: Optional[str] = Field(None, example="123456", description="Senha do usuário")
     perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
 
+# class UsuarioDeleteSchema(BaseModel):
+#     """
+#     Define como deve ser a estrutura retornada ao deletar um usuario
+#     """
+#     mesage: str
+#     nome: str
 
-class UsuarioDeleteSchema(BaseModel):
-    """
-    Define como deve ser a estrutura retornada ao deletar um usuario
-    """
-    mesage: str
-    nome: str
 
-
-class UsuarioSearchSchema(BaseModel):
-    """
-    Define como um novo usuario a ser inserido deve ser representado
-    """
-    nome: Optional[str] = Field(None, example="Joe Doe", description="Nome do usuário")
-    email: Optional[str] = Field(None, example="joedoe@email.com", description="Email do usuário")
-    perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
+# class UsuarioSearchSchema(BaseModel):
+#     """
+#     Define como um novo usuario a ser inserido deve ser representado
+#     """
+#     nome: Optional[str] = Field(None, example="Joe Doe", description="Nome do usuário")
+#     email: Optional[str] = Field(None, example="joedoe@email.com", description="Email do usuário")
+#     perfil: Optional[Perfil] = Field(None, example=Perfil.USUARIO, description="Perfil do usuário")
