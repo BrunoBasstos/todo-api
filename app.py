@@ -2,7 +2,6 @@
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 from flask import g, redirect, request
-from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import UnprocessableEntity
 from models import Session, Usuario, Tarefa
@@ -29,10 +28,12 @@ def home():
     """
     return redirect('/openapi/swagger')
 
+
 @app.get('/auth')
 @protect
 def auth():
     return g.current_user.to_dict(), 200
+
 
 @app.get('/usuario', tags=[usuario_tag])
 @protect
@@ -378,4 +379,4 @@ def login():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
