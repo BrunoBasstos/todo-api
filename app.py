@@ -27,8 +27,13 @@ tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remo
 def home():
     """
     Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
+
+    Para efeitos didáticos e facilidade de uso, as requisições provenientes da documentação são autorizadas automaticamente.
+
+    Para isso, foi criado um middleware que verifica se a requisição é originária da tela de documentação e, caso seja, o usuário administrador padrão criado na inicialização da aplicação é autorizado automaticamente.
     """
     return redirect('/openapi/swagger')
+
 
 @app.get('/auth', tags=[autenticacao_tag])
 @protect
@@ -39,6 +44,8 @@ def auth():
     Usado para revalidação do Token em caso de refresh de página.
     """
     return g.current_user.to_dict(), 200
+
+
 @app.post('/login', tags=[autenticacao_tag])
 def login(body: LoginSchema):
     """
@@ -63,6 +70,7 @@ def login(body: LoginSchema):
         **usuario.to_dict(),
         "access_token": token
     }], 200
+
 
 @app.get('/prioridade', tags=[prioridade_tag])
 @protect

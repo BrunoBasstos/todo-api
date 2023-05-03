@@ -11,7 +11,7 @@ SECRET_KEY = 'ef860173e6b13b7eec9eaec0dad96d6a3ef3e711'  # sha1('chave_secreta')
 AUTHORIZED_USER_ID = 1
 
 # Substitua isso pela URL da tela de documentação
-DOCUMENTATION_URL = 'http://localhost:5000/openapi/swagger'
+DOCUMENTATION_URL = ['http://127.0.0.1:5000/openapi/swagger', 'http://127.0.0.1:5000/openapi/swagger']
 
 
 def protect(func):
@@ -22,7 +22,7 @@ def protect(func):
         token = request.headers.get('Authorization')
 
         # Verifica se a requisição é originária da tela de documentação
-        if request.headers.get('Referer') == DOCUMENTATION_URL:
+        if request.headers.get('Referer') in DOCUMENTATION_URL:
             session = Session()
             usuario = session.query(Usuario).filter(Usuario.id == AUTHORIZED_USER_ID).first()
             g.current_user = usuario
