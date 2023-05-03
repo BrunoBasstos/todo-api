@@ -44,8 +44,8 @@ def login(body: LoginSchema):
     """
     Autentica um usuário e retorna uma instância do usuário autenticado com um token de acesso.
     """
-    email = request.json.get('email')
-    senha = request.json.get('senha')
+    email = body.email
+    senha = body.senha
     session = Session()
     usuario = session.query(Usuario).filter_by(email=email).first()
 
