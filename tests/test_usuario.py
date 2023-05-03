@@ -41,7 +41,7 @@ class TestUsuario(BaseTestCase):
         self.assertEqual(data[len(data) - 2]["nome"], admin.nome)
         self.assertEqual(data[len(data) - 1]["nome"], usuario.nome)
 
-    def test_users_will_get_theirselves_in_get_usuario(self):
+    def test_user_cannot_list_users(self):
         for i in range(5):
             self.createUser(Perfil.USUARIO.value)
 
@@ -50,9 +50,9 @@ class TestUsuario(BaseTestCase):
 
         response = self.client.get('/usuario', headers=self.get_default_test_header())
         data = json.loads(response.data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["nome"], usuario.nome)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(data[0]['type'], 'authorization')
+        self.assertEqual(data[0]['msg'], 'Acesso restrito a administradores.')
 
     def test_get_usuario_by_id(self):
         usuario1 = self.createUser(Perfil.USUARIO.value)
