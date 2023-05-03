@@ -17,11 +17,11 @@ CORS(app)
 
 docs_tag = Tag(name="Documentação", description="Documentação da API")
 autenticacao_tag = Tag(name="Autenticação", description="Autenticação de usuários")
-status_tag = Tag(name="Status", description="Listar os status disponíveis")
-util_tag = Tag(name="Utils",
+status_tag = Tag(name="Status [auth: bearer]", description="Listar os status disponíveis")
+util_tag = Tag(name="Utils [auth: bearer]",
                description="Rotas para retornar informações úteis para a aplicação: lista de status, lista de prioridades e dados do usuário autenticado.")
-usuario_tag = Tag(name="Usuario", description="Incluir, alterar, visualizar e remover usuarios", )
-tarefa_tag = Tag(name="Tarefa", description="Incluir, alterar, visualizar e remover tarefas")
+usuario_tag = Tag(name="Usuario [auth: bearer]", description="Incluir, alterar, visualizar e remover usuarios", )
+tarefa_tag = Tag(name="Tarefa [auth: bearer]", description="Incluir, alterar, visualizar e remover tarefas")
 
 
 @app.get('/', tags=[docs_tag])
@@ -43,7 +43,7 @@ def login(body: LoginSchema):
 
     Todas as rotas são protegidas por autenticação, exceto a rota de login e a rota de documentação.
 
-    Para consumir as rotas protegidas, é necessário enviar o token de acesso obitido nesta rota no header Authorization, no formato Bearer <token>.
+    Para consumir as rotas protegidas, é necessário enviar o token de acesso obitido nesta rota no header Authorization, no formato Bearer &lt;token&gt;.
     """
     email = body.email
     senha = body.senha
